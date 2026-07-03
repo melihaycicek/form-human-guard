@@ -1,0 +1,100 @@
+{
+  "name": "form-human-guard",
+  "version": "0.1.0",
+  "description": "A lightweight pre-submit direction matching guard for forms.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js",
+      "require": "./dist/react/index.cjs"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js",
+      "require": "./dist/server/index.cjs"
+    },
+    "./express": {
+      "types": "./dist/express/index.d.ts",
+      "import": "./dist/express/index.js",
+      "require": "./dist/express/index.cjs"
+    },
+    "./stores": {
+      "types": "./dist/stores/index.d.ts",
+      "import": "./dist/stores/index.js",
+      "require": "./dist/stores/index.cjs"
+    },
+    "./styles.css": "./dist/react/styles/default.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "tsup && npm run copy:css",
+    "copy:css": "node scripts/copy-css.mjs",
+    "test": "vitest run",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "keywords": [
+    "form",
+    "guard",
+    "anti-bot",
+    "human-verification",
+    "react",
+    "express",
+    "direction",
+    "captcha-alternative"
+  ],
+  "author": "Melih Ayçiçek",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "express": ">=4",
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@types/supertest": "^6.0.2",
+    "express": "^4.19.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "supertest": "^7.0.0",
+    "tsup": "^8.0.2",
+    "typescript": "^5.5.0",
+    "vitest": "^3.0.0"
+  }
+}
