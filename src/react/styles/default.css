@@ -1,0 +1,72 @@
+/* Optional default styling for form-human-guard. The component is fully
+   functional without this file. */
+
+.fhg {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1f2328;
+}
+
+.fhg-instruction {
+  font-size: 0.875rem;
+  max-width: 18rem;
+  line-height: 1.4;
+}
+
+.fhg-pad {
+  background: #f6f8fa;
+  border-color: #d0d7de !important;
+  transition: background 120ms ease;
+}
+
+.fhg-pad:hover {
+  background: #eef1f4;
+}
+
+.fhg-pad:focus-visible {
+  outline: 3px solid #0969da;
+  outline-offset: 2px;
+}
+
+.fhg[data-status="success"] .fhg-pad {
+  background: #dafbe1;
+  border-color: #1a7f37 !important;
+}
+
+.fhg[data-status="failed"] .fhg-pad {
+  background: #ffebe9;
+  border-color: #cf222e !important;
+}
+
+.fhg[data-status="verifying"] .fhg-pad,
+.fhg[data-status="loading"] .fhg-pad {
+  opacity: 0.6;
+}
+
+.fhg-success-mark {
+  color: #1a7f37;
+  font-weight: 700;
+}
+
+.fhg-refresh {
+  align-self: flex-start;
+  font-size: 0.8125rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.fhg-refresh:hover:not(:disabled) {
+  background: #f6f8fa;
+}
+
+.fhg-refresh:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.fhg-status {
+  font-size: 0.8125rem;
+  min-height: 1.25em;
+}
