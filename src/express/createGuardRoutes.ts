@@ -5,9 +5,11 @@ import type { GuardErrorCode } from "../core/errors";
 import { errorMessages } from "../core/errors";
 import { isDifficulty } from "../core/difficulty";
 import { isDirection } from "../modes/direction/direction.utils";
-import type { DirectionResponse } from "../modes/direction/direction.types";
-import { createDirectionChallenge } from "../server/createChallenge";
-import { verifyDirectionChallenge } from "../server/verifyChallenge";
+import type { DirectionMatchClientSignals } from "../modes/direction-match/directionMatch.types";
+import { createDirectionChallenge, createDirectionMatchChallenge } from "../server/createChallenge";
+import type { RiskAssessment, RiskConfig } from "../server/risk/types";
+import type { GuardVerifyRequest } from "../server/verifyResponse";
+import { verifyGuardResponse } from "../server/verifyResponse";
 import type { GuardStore } from "../stores/Store";
 
 export interface CreateGuardRoutesOptions {
@@ -21,6 +23,13 @@ export interface CreateGuardRoutesOptions {
   action?: string;
   challengeTtlMs?: number;
   tokenTtlMs?: number;
+  /** Rule-based risk scoring for direction-match verifications. */
+  risk?: RiskConfig;
+  /**
+   * Observability hook: called with the risk assessment of every
+   * direction-match verification. Reasons are never sent to the client.
+   */
+  onRiskDecision?: (assessment: RiskAssessment) => void;
 }
 
 export function statusForCode(code: GuardErrorCode): number {
@@ -35,7 +44,10 @@ export function statusForCode(code: GuardErrorCode): number {
     case "TOKEN_ALREADY_USED":
       return 401;
     case "ACTION_MISMATCH":
+    case "RISK_DENIED":
       return 403;
+    case "CHALLENGE_AGAIN":
+      return 409;
     default:
       return 400;
   }
@@ -49,7 +61,7 @@ export function sendGuardError(res: Response, code: GuardErrorCode): void {
 
 const INPUT_TYPES = ["mouse", "touch", "keyboard"] as const;
 
-function parseDirectionResponse(body: unknown): DirectionResponse | null {
+function parseVerifyRequest(body: unknown): GuardVerifyRequest | null {
   if (typeof body !== "object" || body === null) {
     return null;
   }
@@ -67,11 +79,25 @@ function parseDirectionResponse(body: unknown): DirectionResponse | null {
     typeof candidate.pointerDistance === "number" && Number.isFinite(candidate.pointerDistance)
       ? candidate.pointerDistance
       : undefined;
+  const clientDurationMs =
+    typeof candidate.clientDurationMs === "number" && Number.isFinite(candidate.clientDurationMs)
+      ? candidate.clientDurationMs
+      : undefined;
+  // Signals pass through as-is: the server-side validator scores anomalies
+  // instead of rejecting them at the HTTP layer.
+  const signals =
+    typeof candidate.signals === "object" &&
+    candidate.signals !== null &&
+    !Array.isArray(candidate.signals)
+      ? (candidate.signals as DirectionMatchClientSignals)
+      : undefined;
   return {
     challengeId: candidate.challengeId,
     direction: candidate.direction,
-    inputType: candidate.inputType as DirectionResponse["inputType"],
+    inputType: candidate.inputType as GuardVerifyRequest["inputType"],
     ...(pointerDistance !== undefined ? { pointerDistance } : {}),
+    ...(clientDurationMs !== undefined ? { clientDurationMs } : {}),
+    ...(signals !== undefined ? { signals } : {}),
   };
 }
 
@@ -101,7 +127,7 @@ export function createGuardRoutes(options: CreateGuardRoutesOptions): Router {
     "/challenge",
     wrap(async (req, res) => {
       const mode = typeof req.query.mode === "string" ? req.query.mode : "direction";
-      if (mode !== "direction") {
+      if (mode !== "direction" && mode !== "direction-match") {
         sendGuardError(res, "UNSUPPORTED_MODE");
         return;
       }
@@ -115,7 +141,9 @@ export function createGuardRoutes(options: CreateGuardRoutesOptions): Router {
         difficulty = req.query.difficulty;
       }
 
-      const challenge = await createDirectionChallenge({
+      const create =
+        mode === "direction-match" ? createDirectionMatchChallenge : createDirectionChallenge;
+      const challenge = await create({
         store: options.store,
         difficulty,
         challengeTtlMs: options.challengeTtlMs,
@@ -129,19 +157,24 @@ export function createGuardRoutes(options: CreateGuardRoutesOptions): Router {
     "/verify",
     wrap(async (req, res) => {
       res.set("Cache-Control", "no-store");
-      const response = parseDirectionResponse(req.body);
+      const response = parseVerifyRequest(req.body);
       if (!response) {
         sendGuardError(res, "INVALID_REQUEST");
         return;
       }
 
-      const result = await verifyDirectionChallenge({
+      const result = await verifyGuardResponse({
         store: options.store,
         secret: options.secret,
         response,
         action: options.action,
         tokenTtlMs: options.tokenTtlMs,
+        risk: options.risk,
       });
+
+      if (result.risk && options.onRiskDecision) {
+        options.onRiskDecision(result.risk);
+      }
 
       if (result.ok) {
         res.status(200).json({ ok: true, token: result.token });

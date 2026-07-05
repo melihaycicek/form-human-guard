@@ -1,6 +1,6 @@
 import { DEFAULT_TOKEN_TTL_MS } from "../core/constants";
 import { randomId } from "../core/random";
-import type { GuardTokenPayload } from "../core/types";
+import type { GuardMode, GuardTokenPayload } from "../core/types";
 import type { GuardStore } from "../stores/Store";
 import { encodePayload, signData } from "./crypto";
 
@@ -8,6 +8,8 @@ export interface IssueGuardTokenOptions {
   store: GuardStore;
   secret: string;
   challengeId: string;
+  /** Which challenge mode the token was earned through. Default "direction". */
+  mode?: GuardMode;
   action?: string;
   tokenTtlMs?: number;
   /** Override the clock (tests). Defaults to Date.now(). */
@@ -31,7 +33,7 @@ export async function issueGuardToken(options: IssueGuardTokenOptions): Promise<
   const payload: GuardTokenPayload = {
     jti: randomId(),
     challengeId: options.challengeId,
-    mode: "direction",
+    mode: options.mode ?? "direction",
     ...(options.action !== undefined ? { action: options.action } : {}),
     issuedAt: now,
     expiresAt: now + tokenTtlMs,

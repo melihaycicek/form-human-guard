@@ -9,6 +9,7 @@ export type {
   StoredToken,
   GuardTokenPayload,
 } from "./core/types";
+export { GUARD_MODES, isGuardMode } from "./core/types";
 export type { GuardErrorCode } from "./core/errors";
 export { errorMessages } from "./core/errors";
 export {
@@ -16,8 +17,13 @@ export {
   DEFAULT_TOKEN_TTL_MS,
   MAX_FAILED_ATTEMPTS,
 } from "./core/constants";
-export type { DifficultyConfig } from "./core/difficulty";
-export { difficultyConfig, DIFFICULTIES, isDifficulty } from "./core/difficulty";
+export type { DifficultyConfig, DirectionMatchDifficultyConfig } from "./core/difficulty";
+export {
+  difficultyConfig,
+  directionMatchDifficultyConfig,
+  DIFFICULTIES,
+  isDifficulty,
+} from "./core/difficulty";
 export type {
   PublicDirectionChallenge,
   DirectionResponse,
@@ -32,3 +38,13 @@ export {
   directionFromDelta,
   isDirection,
 } from "./modes/direction/direction.utils";
+export type {
+  PublicDirectionMatchChallenge,
+  DirectionMatchResponse,
+  DirectionMatchClientSignals,
+} from "./modes/direction-match/directionMatch.types";
+export {
+  DIRECTION_RING,
+  rotateDirection,
+  ringDistance,
+} from "./modes/direction-match/directionMatch.utils";

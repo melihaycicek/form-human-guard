@@ -1,4 +1,5 @@
 import type { GuardErrorCode } from "../core/errors";
+import { isGuardMode } from "../core/types";
 import type { GuardTokenPayload } from "../core/types";
 import type { GuardStore } from "../stores/Store";
 import { decodePayload, safeEqualStrings, signData } from "./crypto";
@@ -53,7 +54,7 @@ export async function verifyGuardToken(
     typeof payload !== "object" ||
     typeof payload.jti !== "string" ||
     typeof payload.challengeId !== "string" ||
-    payload.mode !== "direction" ||
+    !isGuardMode(payload.mode) ||
     typeof payload.issuedAt !== "number" ||
     typeof payload.expiresAt !== "number"
   ) {

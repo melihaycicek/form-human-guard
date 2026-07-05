@@ -12,7 +12,9 @@ export type GuardErrorCode =
   | "TOKEN_NOT_FOUND"
   | "TOKEN_EXPIRED"
   | "TOKEN_ALREADY_USED"
-  | "ACTION_MISMATCH";
+  | "ACTION_MISMATCH"
+  | "RISK_DENIED"
+  | "CHALLENGE_AGAIN";
 
 /**
  * Human-readable messages for each code. Static text only — never include
@@ -32,4 +34,6 @@ export const errorMessages: Record<GuardErrorCode, string> = {
   TOKEN_EXPIRED: "The guard token has expired.",
   TOKEN_ALREADY_USED: "The guard token was already used.",
   ACTION_MISMATCH: "The guard token was issued for a different action.",
+  RISK_DENIED: "The interaction was rejected by the risk policy.",
+  CHALLENGE_AGAIN: "The interaction could not be trusted. Request a new challenge and retry.",
 };
