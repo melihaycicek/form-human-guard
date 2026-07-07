@@ -1,0 +1,103 @@
+---
+title: Server utilities
+description: Framework-agnostic building blocks — the same functions the Express adapter uses.
+---
+
+```ts
+import {
+  createDirectionChallenge,
+  createDirectionMatchChallenge,
+  verifyDirectionChallenge,
+  verifyDirectionMatchChallenge,
+  verifyGuardResponse, // mode-dispatching: routes by the stored challenge's mode
+  issueGuardToken,
+  verifyGuardToken,
+  assessDirectionMatchRisk,
+  validateDirectionMatchSignals,
+  defaultDirectionMatchRiskRules,
+} from "form-human-guard/server";
+```
+
+These are the building blocks the Express adapter is made of. They import no framework code, so they can wire the same flow into any Node server — Next.js Route Handlers, Fastify, raw `http`, a queue worker.
+
+## Creating challenges
+
+```ts
+const challenge = await createDirectionChallenge({
+  store,               // GuardStore
+  difficulty: "easy",  // optional, default "easy"
+  challengeTtlMs: 120_000, // optional, default 120 s
+});
+// → PublicDirectionChallenge: { challengeId, mode, direction, difficulty, expiresAt }
+
+const matchChallenge = await createDirectionMatchChallenge({ store });
+// → PublicDirectionMatchChallenge:
+//   { challengeId, mode, targetDirection, initialDirection, difficulty, expiresAt }
+```
+
+Both persist the challenge in the store with a native TTL and return only the public shape to send to the browser. For direction-match, `initialDirection` and `targetDirection` are randomized server-side and never equal.
+
+## Verifying responses
+
+`verifyGuardResponse` looks up the stored challenge and dispatches to the matching verifier — the mode comes from the store, never from anything the client claims:
+
+```ts
+const result = await verifyGuardResponse({
+  store,
+  secret: process.env.GUARD_SECRET!,
+  response: body,      // GuardVerifyRequest from the client
+  action: "signup",    // optional action binding
+  tokenTtlMs: 180_000, // optional, default 180 s
+  risk: {},            // optional RiskConfig (direction-match only)
+});
+
+if (result.ok) {
+  // result.token  — one-time HMAC token for the client
+  // result.payload — decoded token payload
+  // result.risk   — RiskAssessment (direction-match only); keep it server-side
+} else {
+  // result.code — GuardErrorCode, see /docs/error-codes
+}
+```
+
+The client request shape:
+
+```ts
+interface GuardVerifyRequest {
+  challengeId: string;
+  direction: Direction;      // final performed/selected direction
+  inputType: InputType;      // "pointer" | "keyboard"
+  pointerDistance?: number;  // direction mode only, soft-checked
+  signals?: DirectionMatchClientSignals; // direction-match only, validated
+  clientDurationMs?: number; // telemetry only — never a decision input
+}
+```
+
+Hard checks run first (challenge exists, not expired, direction correct, server-measured elapsed time within the difficulty's min/max, attempt limit). Direction-match verifications then pass through signal validation and [risk scoring](/docs/risk-scoring).
+
+## Tokens
+
+```ts
+// issued internally by the verifiers; exported for custom flows
+const issued = await issueGuardToken({ store, secret, challenge, action: "signup" });
+
+// verify AND consume — the token is deleted on success
+const check = await verifyGuardToken({
+  store,
+  secret,
+  token: body.guardToken,
+  action: "signup", // must match the issuing action (both may be undefined)
+});
+
+if (check.ok) {
+  // check.payload: { jti, challengeId, mode, action?, issuedAt, expiresAt }
+}
+```
+
+Verification order: shape → HMAC signature (constant-time comparison) → expiry → presence in the store (one-time use) → action binding. On success the token is deleted, so a second verification fails with `TOKEN_NOT_FOUND`.
+
+## Timing is server-side
+
+The elapsed time used in decisions is `now - storedChallenge.createdAt`, measured entirely on the server. `clientDurationMs` is telemetry: the only thing it can do is *raise* the risk score when it wildly disagrees with the server measurement (a replay indicator).
+
+Defaults: challenges expire after 120 s, tokens after 180 s, and a challenge is deleted after 2 wrong-direction attempts.

@@ -1,0 +1,48 @@
+---
+title: Introduction
+description: What form-human-guard is, what it is not, and when to use it.
+---
+
+**form-human-guard** is a lightweight pre-submit direction matching guard for forms. The user is shown a direction (an arrow) and has to perform it — by dragging with a mouse or finger, or by pressing arrow keys — before your form can be submitted. On success the server issues a short-lived, one-time, HMAC-signed guard token that your protected endpoint verifies and consumes.
+
+It is a TypeScript package with **zero runtime dependencies**, shipped as subpath exports so you only load what you use:
+
+```ts
+import { DirectionGuard, SubmitGuard, useSubmitGuard } from "form-human-guard/react";
+import { createDirectionChallenge, verifyGuardResponse, verifyGuardToken } from "form-human-guard/server";
+import { createGuardRoutes, requireGuardToken } from "form-human-guard/express";
+import { MemoryStore, RedisStore } from "form-human-guard/stores";
+import "form-human-guard/styles.css";
+```
+
+## What it is — and what it is not
+
+This package is **not a full CAPTCHA replacement**. The expected direction is visible to the client, so a targeted bot can always pass it. It is a lightweight pre-submit interaction guard designed to reduce low-effort automated form abuse. Use it together with rate limiting, server-side validation, and normal authentication security controls.
+
+It is:
+
+- A pre-submit human-interaction guard that filters out low-effort bots and accidental submits
+- A short-lived, one-time token flow with server-side timing checks
+
+It is **not**:
+
+- An authentication system
+- A CAPTCHA service
+- A replacement for rate limiting
+
+## Two guard styles
+
+| Component | Mode | Behaviour |
+| --- | --- | --- |
+| `DirectionGuard` | `direction` (v0.1) | Always-visible widget inside the form: perform the shown direction on a pad. |
+| `SubmitGuard` | `direction-match` (v0.2) | Invisible until submit. The submit is intercepted and a randomized rotate-to-match challenge opens in a themeable overlay rendered inside a **closed ShadowRoot**. Verification adds interaction signals and deterministic rule-based risk scoring. |
+
+## The flow
+
+1. The client fetches a challenge.
+2. The user performs the interaction (pointer or keyboard).
+3. The server verifies the response — **timing is measured server-side**.
+4. On success the server issues a one-time HMAC-signed token, bound to an optional action.
+5. Your protected endpoint verifies **and consumes** the token. A token can never be used twice.
+
+Continue with [Getting started](/docs/getting-started), or jump straight to the [Next.js recipe](/docs/nextjs) — the exact pattern this site runs on.

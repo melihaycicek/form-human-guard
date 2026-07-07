@@ -1,0 +1,98 @@
+---
+title: Stores
+description: The GuardStore contract, MemoryStore's limits, and RedisStore with client adapters.
+---
+
+Challenges and one-time tokens need persistence between the challenge request and the verify/consume calls. That persistence is pluggable through one small interface:
+
+```ts
+import type { GuardStore } from "form-human-guard/stores";
+
+interface GuardStore {
+  setChallenge(id: string, value: StoredChallenge, ttlMs: number): Promise<void>;
+  getChallenge(id: string): Promise<StoredChallenge | null>;
+  deleteChallenge(id: string): Promise<void>;
+  setToken(id: string, value: StoredToken, ttlMs: number): Promise<void>;
+  getToken(id: string): Promise<StoredToken | null>;
+  deleteToken(id: string): Promise<void>;
+}
+```
+
+Implementations must expire entries after `ttlMs` and treat expired entries as absent.
+
+## MemoryStore — development only
+
+```ts
+import { MemoryStore } from "form-human-guard/stores";
+const store = new MemoryStore();
+```
+
+`MemoryStore` keeps everything in the Node process. That means state is lost on restart, and it is **not suitable for multi-instance deployments**: a challenge created on one instance cannot be verified on another. On serverless platforms (Vercel, Lambda) every request may hit a different instance, so MemoryStore breaks *silently* — it works in `next dev` and fails in production. See the [Next.js recipe](/docs/nextjs) for the environment-detecting factory this site uses.
+
+## RedisStore — production
+
+Redis is **not** a dependency of this package — you inject a connected client, so MemoryStore users install nothing extra:
+
+```ts
+import Redis from "ioredis";
+import { RedisStore } from "form-human-guard/stores";
+
+const store = new RedisStore({
+  client: new Redis(process.env.REDIS_URL!),
+  keyPrefix: "fhg:", // default "fhg:"
+});
+```
+
+The injected client only needs three methods, matching ioredis directly:
+
+```ts
+interface RedisStoreClient {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string, pxKeyword: "PX", ttlMs: number): Promise<unknown>;
+  del(key: string): Promise<unknown>;
+}
+```
+
+Entries are stored as JSON with native Redis `PX` TTLs, so expiry and cleanup are handled by Redis, and one-time token consumption (`DEL` on first use) holds across instances.
+
+## Client adapters
+
+**node-redis v4:**
+
+```ts
+import { createClient } from "redis";
+
+const client = createClient({ url: process.env.REDIS_URL });
+await client.connect();
+const store = new RedisStore({
+  client: {
+    get: (key) => client.get(key),
+    set: (key, value, _px, ttlMs) => client.set(key, value, { PX: ttlMs }),
+    del: (key) => client.del(key),
+  },
+});
+```
+
+**@upstash/redis (serverless / HTTP):**
+
+```ts
+import { Redis } from "@upstash/redis";
+
+const redis = Redis.fromEnv();
+const store = new RedisStore({
+  client: {
+    get: async (key) => {
+      const v = await redis.get<string>(key);
+      return v === null ? null : typeof v === "string" ? v : JSON.stringify(v);
+    },
+    set: (key, value, _px, ttlMs) => redis.set(key, value, { px: ttlMs }),
+    del: (key) => redis.del(key),
+  },
+});
+```
+
+## Bring your own storage
+
+Any shared store works — implement `GuardStore` over DynamoDB, Postgres with a TTL sweeper, or whatever your stack shares between instances. Keep the semantics: TTL-based expiry, and `deleteToken` must be atomic enough that two concurrent consumers cannot both succeed (Redis `DEL` gives you this for free).
+
+Run the full challenge → verify → consume flow once against your real store as an integration check before shipping.

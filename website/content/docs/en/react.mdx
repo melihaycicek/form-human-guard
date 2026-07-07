@@ -1,0 +1,78 @@
+---
+title: React components
+description: DirectionGuard, SubmitGuard, and the headless useSubmitGuard hook.
+---
+
+Everything in `form-human-guard/react` is a client-side component or hook — in Next.js, use them inside `"use client"` components.
+
+## `<DirectionGuard />`
+
+The always-visible widget (v0.1, `direction` mode). It fetches a challenge on mount, shows the direction to perform, and hands you a one-time token via `onVerified`.
+
+```tsx
+import { DirectionGuard } from "form-human-guard/react";
+import "form-human-guard/styles.css"; // optional — fully functional without it
+
+<DirectionGuard endpoint="/guard" difficulty="easy" onVerified={(token) => setToken(token)} />
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `endpoint` | `string` | `"/guard"` | Base path where the guard routes are mounted |
+| `difficulty` | `"easy" \| "medium" \| "strict"` | `"easy"` | UI hint only; the server is authoritative |
+| `iconType` | `"svg" \| "symbol"` | `"svg"` | Built-in SVG arrow or Unicode arrow characters |
+| `size` | `"sm" \| "md" \| "lg" \| number` | `"md"` | Icon size (sm = 32, md = 48, lg = 64 px) |
+| `disabled` | `boolean` | `false` | Disables all interaction |
+| `className` | `string` | — | Extra class on the root element |
+| `onVerified` | `(token: string) => void` | — | Called with the one-time guard token on success |
+| `onError` | `(error: Error) => void` | — | Called on network/unexpected errors |
+| `renderDirection` | `({ direction, size, rotation }) => ReactNode` | — | Custom direction renderer |
+
+## `<SubmitGuard />`
+
+The invisible submit-time guard (v0.2, `direction-match` mode). It renders only a hidden token input. When the user submits the form, the submit is intercepted, a challenge is created **at submit time**, and a modal overlay asks the user to rotate their arrow until it matches the randomized target. On success the token lands in the hidden input and the original submit continues automatically.
+
+```tsx
+<SubmitGuard theme="terminal" themeOverrides={{ accent: "#f59e0b" }} />
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `endpoint` | `string` | `"/guard"` | Base path where the guard routes are mounted |
+| `difficulty` | `"easy" \| "medium" \| "strict"` | `"easy"` | UI hint only; the server is authoritative |
+| `theme` | preset name or `GuardTheme` | `"light"` | Overlay theme — see [Theming](/docs/theming) |
+| `themeOverrides` | `Partial<GuardTheme>` | — | Token overrides applied on top of the theme |
+| `tokenFieldName` | `string` | `"guardToken"` | Name of the hidden input carrying the token |
+| `disabled` | `boolean` | `false` | Stops intercepting submits |
+| `onToken` | `(token: string) => void` | — | Called when a token is issued (also lands in the hidden input) |
+| `onCancel` | `() => void` | — | Called when the user cancels; the submit stays cancelled |
+| `onError` | `(error: Error) => void` | — | Called on network/unexpected errors |
+
+Notes:
+
+- The overlay lives inside a **closed ShadowRoot** appended to `document.body`: host page CSS cannot restyle it, page scripts cannot reach into it (`host.shadowRoot` is `null`), and its styles cannot leak out. Closed is the default and only mode.
+- Each submit attempt requires a fresh solve — tokens are one-time, and the guard re-intercepts the next submit.
+
+## `useSubmitGuard(options)`
+
+For a custom challenge UI, the headless hook exposes the same flow without the overlay — interception and the post-success resubmit are handled for you.
+
+```tsx
+import { useSubmitGuard } from "form-human-guard/react";
+
+const { open, status, message, challenge, token, inputRef, begin, confirm, cancel } =
+  useSubmitGuard({ endpoint: "/guard" });
+```
+
+Attach `inputRef` to a hidden input inside the form. Render your own UI while `open` is true; call `confirm(direction, meta)` with the user's final direction and `cancel()` to abort.
+
+## Input & accessibility
+
+- **Pointer:** press, drag in the shown direction, release. The direction is derived from the angle of the start→end vector (eight 45° sectors).
+- **Keyboard:** press the arrow keys. For diagonals, combine two arrows — hold them together or press them in quick succession (e.g. ↑ and → for up-right). The gesture commits shortly after all keys are released; Escape cancels. In the overlay, ← / → rotate, Enter confirms, Escape cancels.
+- Focus moves into the overlay dialog while open, is trapped there, and is restored on close. Status changes are announced via `aria-live`. The expected direction is described in text (never color alone), and touch targets are at least 44×44 px.
+- Keyboard input is exempt from the pointer-distance check on the server.
+
+## Known limitation: overlay language
+
+The overlay's built-in strings (instructions, button labels) ship in English only in v0.2. If you need localized challenge UI today, build it with `useSubmitGuard` — the headless hook gives you the full flow with your own markup and strings.

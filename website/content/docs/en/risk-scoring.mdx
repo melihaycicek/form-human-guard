@@ -1,0 +1,91 @@
+---
+title: Risk scoring
+description: Deterministic, explainable, rule-based scoring for direction-match verifications. No ML, no fingerprinting.
+---
+
+Direction-match verifications pass through a risk layer **after** the hard checks (direction correctness, server-side min/max solve time, attempt limits). It is deterministic and rule-based: plain functions, fixed scores, human-readable reasons. There is no ML, no external service, and no fingerprinting.
+
+## Signals
+
+The client reports only lightweight, non-sensitive counters:
+
+```ts
+interface DirectionMatchClientSignals {
+  rotateCount: number;          // total rotation steps performed
+  eventCount: number;           // total user input events observed
+  directionChangeCount: number; // how often rotation reversed (left↔right)
+}
+```
+
+**No mouse coordinates, no fingerprinting.** Signals are untrusted input: the server validates them with `validateDirectionMatchSignals`, and anomalies (`SIGNALS_MISSING`, `SIGNALS_MALFORMED`, `SIGNALS_OUT_OF_RANGE`, `SIGNALS_INCONSISTENT`) only ever **raise** the score. Timing decisions always come from server-measured elapsed time.
+
+## Default rules
+
+| Rule | Score | Fires when |
+| --- | --- | --- |
+| `near-min-duration` | +20 | Solved in less than 1.5× the difficulty's minimum duration |
+| `missing-signals` | +40 | No signals object was reported at all |
+| `malformed-signals` | +35 | Signals malformed or counters out of range |
+| `inconsistent-signals` | +40 | Counters contradict each other (e.g. more rotations than events) |
+| `impossible-rotation` | +50 | Fewer rotation steps reported than physically needed to reach the target |
+| `no-interaction-events` | +45 | Zero input events for a solved challenge |
+| `excessive-rotation` | +15 | More than 100 rotation steps — beyond human-scale interaction |
+| `repeated-failures` | +15/attempt (max +30) | Failed attempts already recorded on this challenge |
+| `stale-challenge` | +10 | Answered in the last 10% of the challenge TTL |
+| `client-duration-mismatch` | +20 | Client-reported duration wildly diverges from server-measured time (replay indicator) |
+
+Scores are summed and clamped to 0–100.
+
+## Decisions and thresholds
+
+| Decision | Condition | HTTP result |
+| --- | --- | --- |
+| `allow` | score < 35 | token issued |
+| `challenge_again` | score ≥ 35 | 409 `CHALLENGE_AGAIN` — challenge invalidated, client fetches a fresh one |
+| `deny` | score ≥ 60 | 403 `RISK_DENIED` — challenge invalidated |
+
+Try it live: the [risk section on the landing page](/#demo) runs three canned interactions through this exact engine.
+
+## Configuration
+
+```ts
+app.use("/guard", createGuardRoutes({
+  store,
+  secret,
+  risk: {
+    denyThreshold: 70,           // default 60
+    challengeAgainThreshold: 40, // default 35
+    // rules: [...]              // replace the default rule set
+    // enabled: false            // turn the layer off
+  },
+  onRiskDecision: (assessment) => {
+    // { score, decision, reasons, results } — server-side only
+    if (assessment.decision !== "allow") logger.warn(assessment);
+  },
+}));
+```
+
+## Custom rules
+
+A rule is a pure function of the `RiskContext`:
+
+```ts
+import type { RiskRule } from "form-human-guard/server";
+import { defaultDirectionMatchRiskRules } from "form-human-guard/server";
+
+const nightShift: RiskRule = {
+  id: "example-slow-lane",
+  evaluate: (ctx) =>
+    ctx.attemptCount > 0 && ctx.serverElapsedMs < 1_000
+      ? { ruleId: "example-slow-lane", score: 10, reason: "Retry solved unusually fast" }
+      : null,
+};
+
+const rules = [...defaultDirectionMatchRiskRules, nightShift];
+```
+
+`RiskContext` gives rules trusted server-side values (`serverElapsedMs`, `challengeTtlMs`, `attemptCount`, difficulty thresholds, `minimalRotateSteps`) plus the validated client signals and their anomalies.
+
+## Explainability stays on the server
+
+Every decision carries the list of fired rules and their reasons — that is the debugging/observability surface, via `onRiskDecision` or the `risk` field on `verifyGuardResponse`'s result. **Never send reasons to the client**: they would tell an attacker exactly which counter to fake next.

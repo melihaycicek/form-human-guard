@@ -1,0 +1,59 @@
+---
+title: Express adapter
+description: createGuardRoutes and requireGuardToken — the fastest server setup.
+---
+
+```ts
+import { createGuardRoutes, requireGuardToken } from "form-human-guard/express";
+```
+
+## `createGuardRoutes(options)` → `Router`
+
+```ts
+app.use("/guard", createGuardRoutes({ store, secret, difficulty: "easy", action: "login" }));
+```
+
+Mounted at `/guard`, the router serves:
+
+| Route | Purpose |
+| --- | --- |
+| `GET /guard/challenge?mode=direction` | Create a visible-widget challenge (default mode) |
+| `GET /guard/challenge?mode=direction-match` | Create a submit-time direction-match challenge |
+| `POST /guard/verify` | Verify the response for either mode; returns `{ ok: true, token }` |
+
+Any other `mode` → 400 `UNSUPPORTED_MODE`. The same mounted router serves both guard styles — `SubmitGuard` needs no extra server setup.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `store` | `GuardStore` | required | Challenge/token persistence |
+| `secret` | `string` | required | HMAC signing secret |
+| `difficulty` | `Difficulty` | `"easy"` | Server-side difficulty |
+| `allowClientDifficulty` | `boolean` | `false` | Honour a valid `?difficulty` query param |
+| `action` | `string` | — | Bind issued tokens to this action |
+| `challengeTtlMs` | `number` | `120000` | Challenge lifetime |
+| `tokenTtlMs` | `number` | `180000` | Token lifetime |
+| `risk` | `RiskConfig` | defaults | Risk scoring for direction-match — see [Risk scoring](/docs/risk-scoring) |
+| `onRiskDecision` | `(assessment) => void` | — | Server-side observability hook for risk assessments |
+
+## `requireGuardToken(options)` → middleware
+
+```ts
+app.post(
+  "/login",
+  requireGuardToken({ store, secret, tokenField: "guardToken", action: "login" }),
+  (req, res) => res.json({ ok: true })
+);
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `store` | `GuardStore` | required | Same store used by the routes |
+| `secret` | `string` | required | Same secret used by the routes |
+| `tokenField` | `string` | `"guardToken"` | JSON body field holding the token |
+| `action` | `string` | — | Required token action |
+
+Requires `express.json()` upstream. On success the decoded payload is attached as `req.guardToken` and the token is **consumed** — a second request with the same token fails with 401 `TOKEN_NOT_FOUND`.
+
+## Difficulty is server-authoritative
+
+The client's `difficulty` prop is only a hint. The server uses its configured difficulty unless you explicitly opt in with `allowClientDifficulty: true` — never let untrusted clients pick `easy` on a strict endpoint by accident.

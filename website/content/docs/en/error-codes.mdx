@@ -1,0 +1,36 @@
+---
+title: Error codes
+description: Every GuardErrorCode with its HTTP status and meaning.
+---
+
+Verification failures respond with `{ ok: false, code, message }` and an appropriate 4xx status. Codes are stable and safe to branch on; messages are static English text that never leaks server internals.
+
+## Full table
+
+| Code | HTTP | Meaning |
+| --- | --- | --- |
+| `INVALID_REQUEST` | 400 | Request body missing required fields or malformed |
+| `UNSUPPORTED_MODE` | 400 | Unknown `mode` on the challenge route |
+| `WRONG_DIRECTION` | 400 | Performed direction did not match the challenge |
+| `TOO_FAST` | 400 | Solved faster than the difficulty's server-measured minimum |
+| `TOO_SLOW` | 400 | Solved slower than the difficulty's server-measured maximum |
+| `MOVEMENT_TOO_SHORT` | 400 | Pointer gesture below the minimum distance (direction mode, pointer input only) |
+| `TOKEN_INVALID` | 401 | Token missing, malformed, or signature check failed |
+| `TOKEN_NOT_FOUND` | 401 | Token never issued, expired out of the store, **or already consumed** |
+| `TOKEN_EXPIRED` | 401 | Token payload expiry has passed |
+| `TOKEN_ALREADY_USED` | 401 | Token already consumed |
+| `ACTION_MISMATCH` | 403 | Token was issued for a different action |
+| `RISK_DENIED` | 403 | Risk score reached the deny threshold; challenge invalidated |
+| `CHALLENGE_NOT_FOUND` | 404 | Challenge does not exist or is no longer available |
+| `CHALLENGE_AGAIN` | 409 | Risk score reached the challenge-again threshold; fetch a fresh challenge and retry |
+| `CHALLENGE_EXPIRED` | 410 | Challenge outlived its TTL before verification |
+
+## Handling guidance
+
+- **400s** are user-correctable: refresh the challenge (`DirectionGuard` shows its retry button; `SubmitGuard` re-opens on the next submit).
+- **401s** on your protected endpoint mean the token flow was not completed — treat as "guard not passed", never as an auth failure.
+- **403 `ACTION_MISMATCH`** in development usually means the `action` passed to the challenge/verify routes differs from the one passed to `verifyGuardToken` / `requireGuardToken`.
+- **409 `CHALLENGE_AGAIN`** is retriable by design: the client fetches a fresh challenge and the user solves again. The built-in components handle this automatically.
+- **410 vs 404**: an expired-but-still-stored challenge returns 410 (the store keeps entries slightly past expiry to report it); a fully evicted one returns 404. Handle both the same way — new challenge.
+
+The TypeScript union is exported as `GuardErrorCode` from `form-human-guard` and `form-human-guard/server`, and the message map as `errorMessages` from the package root.

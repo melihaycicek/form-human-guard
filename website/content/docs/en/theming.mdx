@@ -1,0 +1,104 @@
+---
+title: Theming
+description: Six presets, a preset + override model, and how themes survive the closed ShadowRoot.
+---
+
+The `SubmitGuard` overlay is themed with a **preset + override** model:
+
+```tsx
+<SubmitGuard theme="glass" />
+<SubmitGuard theme="terminal" themeOverrides={{ accent: "#f59e0b", radius: "0px" }} />
+```
+
+## Presets
+
+<div className="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Preset</th><th>Surface</th><th>Accent</th><th>Character</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>minimal</code></td>
+        <td><span style={{display:"inline-block",width:"1rem",height:"1rem",borderRadius:"4px",border:"1px solid var(--border)",background:"#ffffff",verticalAlign:"-2px"}} /> <code>#ffffff</code></td>
+        <td><span style={{display:"inline-block",width:"1rem",height:"1rem",borderRadius:"4px",border:"1px solid var(--border)",background:"#111111",verticalAlign:"-2px"}} /> <code>#111111</code></td>
+        <td>Monochrome, tight radius</td>
+      </tr>
+      <tr>
+        <td><code>light</code> (default)</td>
+        <td><span style={{display:"inline-block",width:"1rem",height:"1rem",borderRadius:"4px",border:"1px solid var(--border)",background:"#f8fafc",verticalAlign:"-2px"}} /> <code>#f8fafc</code></td>
+        <td><span style={{display:"inline-block",width:"1rem",height:"1rem",borderRadius:"4px",border:"1px solid var(--border)",background:"#0969da",verticalAlign:"-2px"}} /> <code>#0969da</code></td>
+        <td>Clean, friendly blue</td>
+      </tr>
+      <tr>
+        <td><code>midnight</code></td>
+        <td><span style={{display:"inline-block",width:"1rem",height:"1rem",borderRadius:"4px",border:"1px solid var(--border)",background:"#111631",verticalAlign:"-2px"}} /> <code>#111631</code></td>
+        <td><span style={{display:"inline-block",width:"1rem",height:"1rem",borderRadius:"4px",border:"1px solid var(--border)",background:"#818cf8",verticalAlign:"-2px"}} /> <code>#818cf8</code></td>
+        <td>Dark navy, indigo accent</td>
+      </tr>
+      <tr>
+        <td><code>glass</code></td>
+        <td><span style={{display:"inline-block",width:"1rem",height:"1rem",borderRadius:"4px",border:"1px solid var(--border)",background:"rgba(180,200,220,0.6)",verticalAlign:"-2px"}} /> <code>rgba(255,255,255,0.72)</code></td>
+        <td><span style={{display:"inline-block",width:"1rem",height:"1rem",borderRadius:"4px",border:"1px solid var(--border)",background:"#0ea5e9",verticalAlign:"-2px"}} /> <code>#0ea5e9</code></td>
+        <td>Translucent, 18px backdrop blur</td>
+      </tr>
+      <tr>
+        <td><code>neutral</code></td>
+        <td><span style={{display:"inline-block",width:"1rem",height:"1rem",borderRadius:"4px",border:"1px solid var(--border)",background:"#fafaf9",verticalAlign:"-2px"}} /> <code>#fafaf9</code></td>
+        <td><span style={{display:"inline-block",width:"1rem",height:"1rem",borderRadius:"4px",border:"1px solid var(--border)",background:"#57534e",verticalAlign:"-2px"}} /> <code>#57534e</code></td>
+        <td>Warm stone grays</td>
+      </tr>
+      <tr>
+        <td><code>terminal</code></td>
+        <td><span style={{display:"inline-block",width:"1rem",height:"1rem",borderRadius:"4px",border:"1px solid var(--border)",background:"#0a0f0a",verticalAlign:"-2px"}} /> <code>#0a0f0a</code></td>
+        <td><span style={{display:"inline-block",width:"1rem",height:"1rem",borderRadius:"4px",border:"1px solid var(--border)",background:"#22c55e",verticalAlign:"-2px"}} /> <code>#22c55e</code></td>
+        <td>Green-on-black, monospace, 4px radius</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+Try all six live in the [theme gallery on the landing page](/#demo-submit).
+
+## The token model
+
+Every theme is a plain object of tokens:
+
+```ts
+interface GuardTheme {
+  accent: string;      // primary interactive color
+  accentText: string;  // text on top of accent
+  surface: string;     // dialog surface
+  backdrop: string;    // full-screen backdrop behind the dialog
+  surfaceBlur: string; // backdrop-filter blur on the surface, e.g. "16px"
+  text: string;
+  textMuted: string;
+  border: string;
+  radius: string;      // dialog + control corner radius
+  spacing: string;     // base spacing unit
+  controlSize: string; // min size of interactive controls (keep ≥ 44px)
+  fontFamily: string;
+  fontSize: string;
+}
+```
+
+Pass a preset name, a preset plus `themeOverrides`, or a complete `GuardTheme` object instead of a preset. The helpers are exported for building your own:
+
+```ts
+import {
+  guardThemePresets,   // Record<GuardThemePreset, GuardTheme>
+  resolveGuardTheme,   // (theme?, overrides?) => GuardTheme
+  themeToCssVariables, // (theme) => Record<"--fhg-*", string>
+  DEFAULT_THEME_PRESET, // "light"
+} from "form-human-guard/react";
+
+const custom = resolveGuardTheme("midnight", { accent: "#f472b6" });
+```
+
+## ShadowRoot notes
+
+The overlay renders inside a **closed ShadowRoot**, so normal page CSS cannot reach it — that's the point. Theming works anyway because tokens are applied as `--fhg-*` CSS custom properties **inline on the overlay container, inside the shadow boundary**. Consequences:
+
+- Your global stylesheet cannot restyle the overlay; use the theme tokens instead.
+- The theme object is the entire styling surface — there are no escape hatches, which keeps the overlay's accessibility guarantees (focus trap, contrast, touch targets) intact.
+- If you need a fully custom UI rather than a themed dialog, use the headless [`useSubmitGuard`](/docs/react#usesubmitguardoptions) hook and render your own markup in normal DOM.

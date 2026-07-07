@@ -1,0 +1,158 @@
+---
+title: Next.js Route Handlers
+description: The exact pattern this site runs on — App Router route handlers, an Upstash Redis store, and action-bound endpoints.
+---
+
+The server modules (`form-human-guard/server`, `form-human-guard/stores`) import neither React nor Express, so they run unchanged inside App Router Route Handlers. This page is written from **this site's own working code** — the live demos above run on it.
+
+## The serverless trap (read this first)
+
+The guard flow is stateful: a challenge is stored, then verified later; a token is stored, then consumed later. On Vercel (and any serverless platform), Route Handlers run as **multiple concurrent instances with no shared memory**. A challenge created on instance A cannot be verified on instance B — so `MemoryStore` silently breaks in production while working perfectly in `next dev`.
+
+The fix is a shared store. This site uses Upstash Redis over HTTP (`@upstash/redis`), which is serverless-safe. Do **not** use `ioredis`/`node-redis` in serverless functions — TCP connections leak across invocations.
+
+## The store factory
+
+`RedisStore` expects an ioredis-style client (`set(key, value, "PX", ttlMs)`); `@upstash/redis` uses `set(key, value, { px })`. A three-method adapter bridges them:
+
+```ts title="lib/guard-store.ts"
+import { MemoryStore, RedisStore } from "form-human-guard/stores";
+import type { GuardStore } from "form-human-guard/stores";
+import { Redis } from "@upstash/redis";
+
+function upstashAdapter(redis: Redis) {
+  return {
+    get: async (key: string) => {
+      const v = await redis.get<string>(key);
+      return v === null ? null : typeof v === "string" ? v : JSON.stringify(v);
+    },
+    set: (key: string, value: string, _px: "PX", ttlMs: number) =>
+      redis.set(key, value, { px: ttlMs }),
+    del: (key: string) => redis.del(key),
+  };
+}
+
+let store: GuardStore | null = null;
+
+export function getGuardStore(): GuardStore {
+  if (store) return store;
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    store = new RedisStore({ client: upstashAdapter(Redis.fromEnv()), keyPrefix: "fhg:" });
+  } else {
+    if (process.env.VERCEL) {
+      console.warn("MemoryStore on serverless — verification WILL fail across instances.");
+    }
+    store = new MemoryStore(); // fine for local next dev (single process)
+  }
+  return store;
+}
+```
+
+## Challenge and verify routes
+
+One dynamic segment per action keeps tokens scoped: a token issued for `demo` can never be spent on `newsletter` (the mismatch fails with `ACTION_MISMATCH`, 403).
+
+```ts title="app/api/guard/[action]/challenge/route.ts"
+import type { NextRequest } from "next/server";
+import {
+  createDirectionChallenge,
+  createDirectionMatchChallenge,
+} from "form-human-guard/server";
+import { getGuardStore } from "@/lib/guard-store";
+
+export const dynamic = "force-dynamic";
+const NO_STORE = { "Cache-Control": "no-store" };
+
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ action: string }> }
+) {
+  const { action } = await context.params; // validate against your allowlist
+  const mode = request.nextUrl.searchParams.get("mode") ?? "direction";
+  const store = getGuardStore();
+
+  if (mode === "direction") {
+    return Response.json(await createDirectionChallenge({ store }), { headers: NO_STORE });
+  }
+  if (mode === "direction-match") {
+    return Response.json(await createDirectionMatchChallenge({ store }), { headers: NO_STORE });
+  }
+  return Response.json(
+    { ok: false, code: "UNSUPPORTED_MODE" },
+    { status: 400, headers: NO_STORE }
+  );
+}
+```
+
+```ts title="app/api/guard/[action]/verify/route.ts"
+import type { NextRequest } from "next/server";
+import { verifyGuardResponse } from "form-human-guard/server";
+import type { GuardVerifyRequest } from "form-human-guard/server";
+import { getGuardStore } from "@/lib/guard-store";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ action: string }> }
+) {
+  const { action } = await context.params;
+  const body = (await request.json()) as GuardVerifyRequest;
+
+  const result = await verifyGuardResponse({
+    store: getGuardStore(),
+    secret: process.env.GUARD_SECRET!,
+    response: body,
+    action,
+  });
+
+  if (!result.ok) {
+    // map result.code to an HTTP status — see /docs/error-codes
+    return Response.json({ ok: false, code: result.code }, { status: 400 });
+  }
+  // result.risk (reasons, score) is server-side observability — never send it
+  return Response.json({ ok: true, token: result.token });
+}
+```
+
+Point the components at the action-scoped base path:
+
+```tsx
+<SubmitGuard endpoint="/api/guard/newsletter" />
+```
+
+## The protected endpoint
+
+Verify **and consume** the token where the real work happens:
+
+```ts title="app/api/newsletter/route.ts"
+import { verifyGuardToken } from "form-human-guard/server";
+import { getGuardStore } from "@/lib/guard-store";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(request: Request) {
+  const { email, guardToken } = await request.json();
+
+  const result = await verifyGuardToken({
+    store: getGuardStore(),
+    secret: process.env.GUARD_SECRET!,
+    token: guardToken,
+    action: "newsletter", // reject tokens issued for anything else
+  });
+  if (!result.ok) {
+    return Response.json({ ok: false, code: result.code }, { status: 401 });
+  }
+
+  // ...validate and store the email...
+  return Response.json({ ok: true });
+}
+```
+
+## Checklist
+
+- `export const dynamic = "force-dynamic"` and `Cache-Control: no-store` on every guard route — challenges must never be cached.
+- Rate limit the challenge/verify endpoints per IP (this site uses `@upstash/ratelimit`).
+- Env vars: `GUARD_SECRET` (long random string), `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
+- If Redis is missing in production, fail loudly (this site returns `DEMO_STORE_UNAVAILABLE`, 503) instead of letting verifications fail mysteriously.
+- Components using `DirectionGuard`/`SubmitGuard` must be `"use client"`; server utilities belong only in Route Handlers and server files.

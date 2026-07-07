@@ -1,0 +1,47 @@
+---
+title: Security model
+description: Server-side timing, one-time tokens, action binding — and the honest threat model.
+---
+
+## The honest threat model
+
+Be clear about what you are buying. The expected direction is delivered to the client, so **a bot written specifically against this guard can always pass it** — it can read the challenge JSON, compute the answer, wait out the minimum duration, and fabricate plausible signals. No client-visible challenge can prevent that, and this package does not claim to.
+
+What the guard does raise is the *cost floor*: generic form-spam tooling that blasts POST requests fails every check (no challenge, no token, no timing). That is the actual, useful claim:
+
+- ✅ Stops low-effort automation: naive scripts, form-blasters, accidental double submits
+- ✅ Guarantees one verified interaction per submit (one-time tokens)
+- ❌ Does not stop a targeted bot written against this specific guard
+- ❌ Does not replace rate limiting, validation, or authentication
+
+If your threat model includes motivated, targeted attackers, you need defence in depth around the guard — rate limiting per IP/account, server-side validation, and authentication controls. The guard is one inexpensive layer, not the wall.
+
+## Server-side timing
+
+The time between challenge creation and verification is computed **on the server** (`now - storedChallenge.createdAt`). The client-reported duration is telemetry only and never influences the pass/fail decision; the only thing it can do is raise the risk score when it contradicts the server measurement (a replay indicator).
+
+Per-difficulty thresholds (direction mode): easy 150 ms–10 s, medium 250 ms–8 s, strict 350 ms–6 s. Direction-match mode: easy 400 ms–20 s, medium 600 ms–15 s, strict 800 ms–12 s. Too fast → `TOO_FAST`; too slow → `TOO_SLOW`.
+
+## One-time tokens
+
+Tokens are HMAC-SHA256 signed and verified with a constant-time comparison. The payload (`jti`, `challengeId`, `mode`, `action`, `issuedAt`, `expiresAt`) is not secret — the signature and the server-side store entry are what matter. On successful verification the store entry is **deleted first**, so reuse fails with `TOKEN_NOT_FOUND` even across concurrent requests (Redis `DEL` semantics).
+
+## Action binding
+
+Pass `action` when issuing (challenge routes) and when consuming (`verifyGuardToken` / `requireGuardToken`). A token issued for `"login"` is rejected on a `"comment"` endpoint with `ACTION_MISMATCH` (403). This prevents token farming: solving cheap challenges on one form to spend them on another. This site's own forms demonstrate it — a demo token is rejected by the newsletter endpoint.
+
+## Other properties
+
+- **Server-authoritative difficulty.** The client's `difficulty` prop is a hint; the server uses its configured value unless you opt in with `allowClientDifficulty: true`.
+- **Attempt limits.** Wrong answers increment a counter; the challenge is deleted after 2 failures.
+- **No secret leakage.** Error responses contain only a stable error code and a generic message — never the expected direction, thresholds, or risk reasons.
+- **Closed ShadowRoot overlay.** Host-page scripts cannot inspect or restyle the challenge dialog (`host.shadowRoot` is `null`). This is containment, not security — the network payloads are still visible to the page, by design.
+- **Signals are counters only.** No coordinates, no fingerprinting, nothing identifying — see [Risk scoring](/docs/risk-scoring).
+
+## Deployment checklist
+
+- `GUARD_SECRET`: long, random, stored in the environment, rotated like any other signing secret.
+- A shared store in production ([Stores](/docs/stores)) — MemoryStore fails silently across instances.
+- Rate limiting on the challenge and verify endpoints (they create state).
+- `Cache-Control: no-store` on all guard routes.
+- Keep risk reasons and `onRiskDecision` output in your logs, not in responses.

@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "title": "form-human-guard — 轻量级的表单提交前方向匹配防护",
+    "description": "一个轻量级的表单提交前方向匹配防护。它不是验证码的替代品，而是一个诚实、零依赖的交互防护层：一次性 HMAC 令牌、服务端计时、可解释的风险评分。"
+  },
+  "common": {
+    "copy": "复制到剪贴板",
+    "copied": "已复制"
+  },
+  "nav": {
+    "demo": "演示",
+    "howItWorks": "工作原理",
+    "exclusive": "Exclusive",
+    "docs": "文档",
+    "skipToContent": "跳转到正文",
+    "mainNav": "主导航",
+    "menu": "菜单"
+  },
+  "theme": {
+    "label": "配色主题",
+    "light": "浅色主题",
+    "dark": "深色主题",
+    "system": "跟随系统"
+  },
+  "localeSwitcher": {
+    "label": "语言"
+  },
+  "hero": {
+    "badge": "v0.2 · MIT · 零运行时依赖",
+    "tagline": "轻量级的表单提交前方向匹配防护。",
+    "sub": "显示一个箭头，请求一个手势，在服务端验证，签发一次性令牌。一个小而诚实的防护层，过滤低成本的机器人 — 没有验证码、没有 Cookie、没有指纹追踪。",
+    "ctaDemo": "在线体验",
+    "ctaDocs": "阅读文档"
+  },
+  "honesty": {
+    "heading": "它是什么 — 以及不是什么",
+    "statement": "这个包不是验证码的完整替代品。目标方向对客户端可见，因此针对性编写的机器人总能通过。它是一个轻量级的提交前交互防护，旨在减少低成本的自动化表单滥用。请与速率限制、服务端校验以及常规的身份认证安全措施配合使用。",
+    "isTitle": "它是",
+    "is1": "一个提交前的人类交互防护，可过滤低成本机器人和误触提交",
+    "is2": "带服务端计时校验的短时效一次性令牌流程",
+    "is3": "确定性、可解释的风险评分 — 无机器学习、无指纹、无坐标采集",
+    "isntTitle": "它不是",
+    "isnt1": "身份认证系统",
+    "isnt2": "验证码服务",
+    "isnt3": "速率限制的替代品"
+  },
+  "demoDirection": {
+    "kicker": "在线演示",
+    "heading": "DirectionGuard — 可见的组件",
+    "lead": "这是真实组件在与本站真实 API 通信。用拖拽或方向键完成显示的方向，并在 X 光面板中观察每一次请求和响应。",
+    "difficulty": "难度",
+    "difficultyNote": "难度由服务端决定：这里的选择器之所以生效，是因为演示端点明确选择了信任它 — 客户端永远无法降低你生产环境的设置。",
+    "easy": "简单",
+    "medium": "中等",
+    "strict": "严格",
+    "reset": "重置演示",
+    "xrayTitle": "X 光 — 实时请求 / 响应",
+    "xrayEmpty": "与组件交互后，防护的网络流量会显示在这里。",
+    "verified": "验证成功 — 已签发一次性令牌",
+    "tokenNote": "该令牌绑定于 “demo” 动作，使用一次即失效。下方的邮件订阅表单会以 403 ACTION_MISMATCH 拒绝它。"
+  },
+  "demoSubmit": {
+    "kicker": "在线演示",
+    "heading": "SubmitGuard — 提交前完全隐形",
+    "lead": "表单里只渲染了一个隐藏输入框。点击“创建账户”后提交会被拦截：把箭头旋转到与目标一致，表单就会带着新的一次性令牌继续提交。",
+    "themeLabel": "弹层主题",
+    "followSite": "跟随站点主题",
+    "accentLabel": "强调色覆盖",
+    "clearAccent": "清除覆盖",
+    "shadowNote": "弹层渲染在封闭的 ShadowRoot 中：页面 CSS 无法改变它的样式，脚本也无法访问其内部。主题化通过你正在使用的预设 + 覆盖令牌实现。",
+    "formTitle": "创建账户",
+    "fakeNote": "这是一个假表单 — 不会存储任何内容。但防护和令牌验证是真实的。",
+    "username": "用户名",
+    "email": "邮箱",
+    "submit": "创建账户",
+    "interceptNote": "此表单由 form-human-guard 保护 — 上面的按钮会被拦截。",
+    "consumedTitle": "令牌已验证并消耗 —",
+    "failedTitle": "验证失败 —",
+    "tryReuse": "尝试重复使用同一令牌",
+    "reuseRejected": "重复使用被拒绝 —",
+    "reuseExplain": "令牌在首次使用时已被服务端删除。任何重放都会以 TOKEN_NOT_FOUND 失败 — 这就是一次性保证。"
+  },
+  "how": {
+    "kicker": "工作原理",
+    "heading": "五个步骤，一份诚实的契约",
+    "lead": "客户端只证明一件事：“刚刚发生了一次像人类的交互”。真正重要的东西 — 计时、判定、令牌 — 全部在服务端。",
+    "steps": {
+      "challenge": {
+        "title": "获取挑战",
+        "desc": "客户端获取随机挑战；服务端以 120 秒 TTL 存储。"
+      },
+      "interact": {
+        "title": "交互",
+        "desc": "用户拖拽、点按或使用方向键。完整支持键盘操作。"
+      },
+      "verify": {
+        "title": "服务端验证",
+        "desc": "方向、尝试次数与耗时 — 全部在服务端测量。"
+      },
+      "token": {
+        "title": "一次性令牌",
+        "desc": "HMAC 签名、绑定动作、180 秒有效、仅可使用一次。"
+      },
+      "consume": {
+        "title": "消耗",
+        "desc": "受保护端点验证并删除令牌。重放必定失败。"
+      }
+    },
+    "cards": {
+      "timing": {
+        "title": "服务端计时",
+        "desc": "求解耗时由服务端时钟计算 — 客户端上报的耗时只是遥测数据，只能提高怀疑度，永远无法降低。"
+      },
+      "binding": {
+        "title": "动作绑定",
+        "desc": "令牌与动作绑定。在演示中获得的令牌无法用于邮件订阅 — 不匹配会以 403 ACTION_MISMATCH 失败。"
+      },
+      "oneTime": {
+        "title": "一次性令牌",
+        "desc": "验证会在服务端删除令牌。同一令牌提交两次会得到 401 — 在上面的演示中亲自试试。"
+      }
+    }
+  },
+  "risk": {
+    "kicker": "风险评分",
+    "heading": "可解释的规则，而不是黑盒",
+    "lead": "direction-match 验证会经过确定性的规则评分。以下三个场景运行在真实引擎上 — 与生产环境相同的规则和阈值。",
+    "scenarios": {
+      "human": {
+        "label": "像人类",
+        "desc": "正常的求解：约 3 秒、若干旋转步骤、合理的事件计数。没有规则触发。"
+      },
+      "signalless": {
+        "label": "无信号",
+        "desc": "答案正确，但完全没有交互信号 — 就像脚本在没有 UI 的情况下重放 HTTP 流程。"
+      },
+      "impossible": {
+        "label": "不可能的旋转",
+        "desc": "在接近最短时间内完成，且上报的旋转步数少于到达目标所需的物理最小值。"
+      }
+    },
+    "decision": "判定",
+    "score": "得分",
+    "reasons": "触发的规则",
+    "noReasons": "没有规则触发 — 该交互看起来像人类。",
+    "decisionAllow": "allow",
+    "decisionChallengeAgain": "challenge_again · 409",
+    "decisionDeny": "deny · 403",
+    "note": "无机器学习、无指纹、无坐标 — 客户端只上报三个计数器，服务端负责校验，每个判定都附带理由。理由只保留在服务端：否则就成了攻击者的作弊手册。"
+  },
+  "code": {
+    "kicker": "代码",
+    "heading": "几行代码接入",
+    "lead": "前端用 React，后端任意 Node 服务。服务端模块既不导入 React 也不导入 Express。",
+    "nextNote": "这正是本站运行的模式 — Route Handlers 加 Upstash Redis。",
+    "viewSource": "查看本站源码"
+  },
+  "teaser": {
+    "kicker": "路线图",
+    "heading": "核心永远保持 MIT。",
+    "lead": "你在本页体验的一切现在免费、将来也免费。Exclusive 是为在生产环境运行防护的团队规划的商业层。",
+    "promise": "没有价格、没有支付、没有假截图 — 它还不存在，我们也不会假装它存在。",
+    "cta": "看看规划了什么",
+    "availableBadge": "现已可用",
+    "plannedBadge": "规划中",
+    "tiers": {
+      "free": {
+        "name": "Free（开源）",
+        "blurb": "完整的包：两种防护模式、令牌、风险评分、主题、存储。MIT 许可。"
+      },
+      "pro": {
+        "name": "Pro",
+        "blurb": "托管验证 API、分析仪表盘、专属挑战模式、规则包。"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "blurb": "SLA、专属模式的自托管授权、SSO、审计日志、定制规则。"
+      }
+    }
+  },
+  "newsletter": {
+    "heading": "订阅版本通知",
+    "lead": "新模式、新规则、破坏性变更 — 有东西发布时发一封简短邮件，仅此而已。",
+    "emailLabel": "邮箱地址",
+    "emailPlaceholder": "you@example.com",
+    "submit": "订阅",
+    "consentLabel": "我同意接收版本通知邮件。随时可一键退订 — 我们只存储你的邮箱地址，别无其他。",
+    "success": "订阅成功 — 你已在列表中。",
+    "successNote": "你刚刚通过了一次真实的 SubmitGuard 挑战才到达这里。",
+    "protectedNote": "此表单由 form-human-guard 保护，动作为 “newsletter” — 欢迎尝试提交。上面演示中的令牌在这里会被拒绝。",
+    "genericError": "出了点问题，请重试。",
+    "invalidEmail": "这看起来不是一个有效的邮箱地址。",
+    "consentRequired": "请勾选同意复选框。",
+    "rateLimited": "请求过于频繁 — 请稍等一分钟再试。"
+  },
+  "footer": {
+    "disclaimer": "不是验证码的替代品：针对性编写的机器人总能通过客户端可见的挑战。这是一个针对低成本表单滥用的轻量级防护 — 请保留你的速率限制和校验。",
+    "productHeading": "产品",
+    "resourcesHeading": "资源",
+    "preferencesHeading": "偏好设置",
+    "demo": "在线演示",
+    "docs": "文档",
+    "exclusive": "Exclusive（规划中）",
+    "license": "MIT 许可证",
+    "cookieSettings": "Cookie 设置",
+    "bottomLine": "诚实构建，诚实防护。"
+  },
+  "cookie": {
+    "ariaLabel": "Cookie 同意",
+    "message": "我们目前只使用绝对必要的 Cookie：你的同意选择、语言和主题偏好。没有分析统计，没有跟踪像素。",
+    "accept": "接受",
+    "necessaryOnly": "仅必要"
+  },
+  "docs": {
+    "menu": "文档菜单",
+    "navLabel": "文档",
+    "englishOnly": "文档目前仅提供英文版本，翻译已在计划中。",
+    "onThisPage": "本页目录",
+    "prev": "上一页",
+    "next": "下一页",
+    "pagination": "文档分页"
+  },
+  "exclusive": {
+    "meta": {
+      "title": "Exclusive — 规划中的商业层",
+      "description": "核心永远保持 MIT。Exclusive 是规划中的商业层：托管验证、分析、专属挑战模式。加入候补名单。"
+    },
+    "plannedBadge": "规划中 — 目前无任何付费内容",
+    "heading": "核心永远采用 MIT 许可。Exclusive 补充团队在生产环境所需的能力。",
+    "lead": "诚实的开放核心：这个包今天能做的一切都保持免费。Exclusive 是其上规划的一层 — 面向不想自己运维基础设施的团队。",
+    "openCorePromise": "开放核心承诺：任何现有功能都永远不会移到付费墙后。今天在 MIT 包里的东西，永远留在那里。",
+    "plannedTierBadge": "规划中 — 加入候补名单",
+    "availableTierBadge": "现已可用",
+    "noPriceNote": "尚无定价 — 这里没有任何在售内容。候补名单成员将在发布时获得早鸟价。",
+    "freeNote": "立即安装：npm install form-human-guard",
+    "honestyNote": "同样的诚实也适用于此：托管验证 API 也无法奇迹般地阻止针对性机器人。Exclusive 的意义在于让防护在规模化场景下运维起来更舒服 — 仪表盘、洞察、支持 — 而不是更强的魔法。",
+    "tiers": {
+      "free": {
+        "name": "Free（开源）",
+        "blurb": "这个包今天能做的一切。这张卡片的存在就是为了让承诺具体可见。",
+        "f1": "两种防护模式：DirectionGuard 与 SubmitGuard",
+        "f2": "一次性 HMAC 令牌、动作绑定、服务端计时",
+        "f3": "支持自定义规则的确定性风险评分",
+        "f4": "全部 6 个弹层主题 + 完整覆盖模型",
+        "f5": "MemoryStore 与 RedisStore、Express 适配器、框架无关的服务端工具"
+      },
+      "pro": {
+        "name": "Pro（规划中）",
+        "blurb": "无需自建基础设施的生产运维。",
+        "f1": "托管验证 API — 即插即用的端点，无需自己运行 Redis",
+        "f2": "带挑战与验证分析的仪表盘",
+        "f3": "风险判定洞察：哪些规则在何处、以何频率触发",
+        "f4": "额外的专属挑战模式与可配置规则包",
+        "f5": "优先支持"
+      },
+      "enterprise": {
+        "name": "Enterprise（规划中）",
+        "blurb": "面向有合规与规模需求的团队。",
+        "f1": "带 SLA 的托管验证",
+        "f2": "专属模式的自托管授权",
+        "f3": "仪表盘 SSO 单点登录",
+        "f4": "审计日志",
+        "f5": "定制规则开发"
+      }
+    },
+    "waitlist": {
+      "heading": "加入候补名单",
+      "lead": "帮我们评估需求 — 并在 Exclusive 发布时获得早鸟价。当然，此表单也由防护本身保护。",
+      "emailLabel": "邮箱地址",
+      "tierLabel": "你对哪个层级感兴趣？",
+      "tiers": {
+        "pro": "Pro",
+        "enterprise": "Enterprise",
+        "curious": "只是好奇"
+      },
+      "noteLabel": "什么功能会让它成为必买？",
+      "noteOptional": "（可选，200 字符）",
+      "notePlaceholder": "例如：全团队都能看懂的仪表盘，或 SOC 2 合规材料……",
+      "submit": "加入候补名单",
+      "success": "你已加入候补名单！",
+      "successNote": "等有真正可展示的东西时我们会邮件通知你 — 而你刚刚通过了一次真实的 waitlist 绑定挑战。",
+      "backToDemo": "返回演示",
+      "protectedNote": "此表单由 form-human-guard 保护，动作为 “waitlist” — 在最重要的页面上吃自己的狗粮。",
+      "genericError": "出了点问题，请重试。",
+      "invalidEmail": "这看起来不是一个有效的邮箱地址。",
+      "rateLimited": "请求过于频繁 — 请稍等一分钟再试。"
+    },
+    "faq": {
+      "heading": "常见问题",
+      "free": {
+        "q": "核心会一直免费吗？",
+        "a": "会。这个包采用 MIT 许可，并永远保持下去。任何现有功能都不会移到付费墙后 — Exclusive 是加法（托管基础设施、仪表盘、额外模式），不是减法。"
+      },
+      "price": {
+        "q": "Pro 会卖多少钱？",
+        "a": "未定 — 我们不会为了显得成熟而编造一个数字。候补名单成员将在发布时获得早鸟价。"
+      },
+      "when": {
+        "q": "Exclusive 什么时候上线？",
+        "a": "不承诺日期。候补名单的存在正是为了评估是否要做、以及先做什么。"
+      },
+      "selfhost": {
+        "q": "我能自托管 Exclusive 功能吗？",
+        "a": "专属挑战模式的自托管授权规划在 Enterprise 层级。开源核心本身天然就是自托管的。"
+      },
+      "captcha": {
+        "q": "这是一个验证码服务吗？",
+        "a": "不是 — Exclusive 也不会把它变成验证码服务。目标方向对客户端可见，针对性机器人总能通过；无论谁来托管验证，这一点都不会改变。参见首页的诚实声明部分。"
+      }
+    }
+  }
+}
