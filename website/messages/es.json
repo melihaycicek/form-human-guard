@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "title": "form-human-guard — un guardián ligero de dirección previo al envío de formularios",
+    "description": "Un guardián ligero de coincidencia de dirección previo al envío de formularios. No es un sustituto del CAPTCHA: es una capa de interacción honesta y sin dependencias, con tokens HMAC de un solo uso, medición de tiempo en el servidor y puntuación de riesgo explicable."
+  },
+  "common": {
+    "copy": "Copiar al portapapeles",
+    "copied": "Copiado"
+  },
+  "nav": {
+    "demo": "Demo",
+    "howItWorks": "Cómo funciona",
+    "exclusive": "Exclusive",
+    "docs": "Docs",
+    "skipToContent": "Saltar al contenido",
+    "mainNav": "Navegación principal",
+    "menu": "Menú"
+  },
+  "theme": {
+    "label": "Tema de color",
+    "light": "Tema claro",
+    "dark": "Tema oscuro",
+    "system": "Seguir el sistema"
+  },
+  "localeSwitcher": {
+    "label": "Idioma"
+  },
+  "hero": {
+    "badge": "v0.2 · MIT · cero dependencias en runtime",
+    "tagline": "Un guardián ligero de coincidencia de dirección previo al envío de formularios.",
+    "sub": "Muestra una flecha, pide el gesto, verifica en el servidor y emite un token de un solo uso. Una capa pequeña y honesta que filtra bots de bajo esfuerzo — sin CAPTCHAs, sin cookies, sin huellas digitales.",
+    "ctaDemo": "Pruébalo en vivo",
+    "ctaDocs": "Leer la documentación"
+  },
+  "honesty": {
+    "heading": "Qué es — y qué no es",
+    "statement": "Este paquete no es un sustituto completo del CAPTCHA. La dirección esperada es visible para el cliente, así que un bot diseñado a medida siempre podrá superarlo. Es un guardián ligero de interacción previo al envío, pensado para reducir el abuso automatizado de bajo esfuerzo. Úsalo junto con limitación de tasa, validación en el servidor y los controles habituales de autenticación.",
+    "isTitle": "Es",
+    "is1": "Un guardián de interacción humana previo al envío que filtra bots de bajo esfuerzo y envíos accidentales",
+    "is2": "Un flujo de tokens de un solo uso y corta vida, con comprobaciones de tiempo en el servidor",
+    "is3": "Puntuación de riesgo determinista y explicable — sin ML, sin huellas, sin coordenadas",
+    "isntTitle": "No es",
+    "isnt1": "Un sistema de autenticación",
+    "isnt2": "Un servicio de CAPTCHA",
+    "isnt3": "Un sustituto de la limitación de tasa"
+  },
+  "demoDirection": {
+    "kicker": "Demo en vivo",
+    "heading": "DirectionGuard — el widget visible",
+    "lead": "Este es el componente real hablando con la API real de este sitio. Realiza la dirección mostrada arrastrando o con las flechas del teclado, y observa cada petición y respuesta en el panel de rayos X.",
+    "difficulty": "Dificultad",
+    "difficultyNote": "La dificultad la decide el servidor: este selector funciona solo porque el endpoint de la demo lo permite explícitamente — un cliente nunca puede rebajar tu configuración de producción.",
+    "easy": "Fácil",
+    "medium": "Media",
+    "strict": "Estricta",
+    "reset": "Reiniciar demo",
+    "xrayTitle": "Rayos X — petición / respuesta en vivo",
+    "xrayEmpty": "Interactúa con el widget y el tráfico de red del guardián aparecerá aquí.",
+    "verified": "Verificado — token de un solo uso emitido",
+    "tokenNote": "Este token está vinculado a la acción \"demo\" y muere con el primer uso. El formulario de novedades de abajo lo rechazaría con 403 ACTION_MISMATCH."
+  },
+  "demoSubmit": {
+    "kicker": "Demo en vivo",
+    "heading": "SubmitGuard — invisible hasta el envío",
+    "lead": "En el formulario solo se renderiza un input oculto. Pulsa «Crear cuenta» y el envío se intercepta: gira la flecha hasta que coincida con el objetivo, y el formulario continúa con un token nuevo de un solo uso.",
+    "themeLabel": "Tema del overlay",
+    "followSite": "Seguir el tema del sitio",
+    "accentLabel": "Color de acento",
+    "clearAccent": "Quitar ajuste",
+    "shadowNote": "El overlay se renderiza en un ShadowRoot cerrado: el CSS de esta página no puede restilarlo y los scripts no pueden acceder a su interior. La tematización funciona mediante los tokens de preset + overrides que estás usando aquí mismo.",
+    "formTitle": "Crear cuenta",
+    "fakeNote": "Un formulario ficticio — no se guarda nada. El guardián y la verificación del token son reales.",
+    "username": "Nombre de usuario",
+    "email": "Correo electrónico",
+    "submit": "Crear cuenta",
+    "interceptNote": "Este formulario está protegido por form-human-guard — el botón de arriba será interceptado.",
+    "consumedTitle": "Token verificado y consumido —",
+    "failedTitle": "Verificación fallida —",
+    "tryReuse": "Intenta reutilizar el mismo token",
+    "reuseRejected": "Reutilización rechazada —",
+    "reuseExplain": "El token se borró en el servidor con el primer uso. Cualquier repetición falla con TOKEN_NOT_FOUND — esa es la garantía de un solo uso."
+  },
+  "how": {
+    "kicker": "Cómo funciona",
+    "heading": "Cinco pasos, un contrato honesto",
+    "lead": "El cliente solo demuestra una cosa: «acaba de ocurrir una interacción con forma humana». Todo lo que importa — tiempos, veredictos, tokens — vive en el servidor.",
+    "steps": {
+      "challenge": {
+        "title": "Desafío",
+        "desc": "El cliente pide un desafío aleatorio; el servidor lo guarda con un TTL de 120 s."
+      },
+      "interact": {
+        "title": "Interacción",
+        "desc": "El usuario arrastra, toca o usa las flechas del teclado. Totalmente operable con teclado."
+      },
+      "verify": {
+        "title": "Verificación en el servidor",
+        "desc": "Dirección, límites de intentos y tiempo transcurrido — todo medido en el servidor."
+      },
+      "token": {
+        "title": "Token de un solo uso",
+        "desc": "Un token firmado con HMAC, vinculado a tu acción, válido 180 s, de un solo uso."
+      },
+      "consume": {
+        "title": "Consumo",
+        "desc": "Tu endpoint protegido verifica y borra el token. Las repeticiones fallan."
+      }
+    },
+    "cards": {
+      "timing": {
+        "title": "Tiempo medido en el servidor",
+        "desc": "El tiempo de resolución se calcula con el reloj del servidor — la duración que informa el cliente es solo telemetría y solo puede aumentar la sospecha, nunca reducirla."
+      },
+      "binding": {
+        "title": "Vinculación a acciones",
+        "desc": "Los tokens llevan una acción. Un token ganado en la demo no puede gastarse en el boletín — el desajuste falla con 403 ACTION_MISMATCH."
+      },
+      "oneTime": {
+        "title": "Tokens de un solo uso",
+        "desc": "La verificación borra el token en el servidor. El mismo token presentado dos veces devuelve 401 — pruébalo tú mismo en la demo de arriba."
+      }
+    }
+  },
+  "risk": {
+    "kicker": "Puntuación de riesgo",
+    "heading": "Reglas explicables, no una caja negra",
+    "lead": "Las verificaciones direction-match pasan por una puntuación determinista basada en reglas. Estos tres escenarios se ejecutan en el motor real — las mismas reglas y umbrales que en producción.",
+    "scenarios": {
+      "human": {
+        "label": "Humano",
+        "desc": "Una resolución normal: ~3 segundos, unos cuantos pasos de rotación, contadores de eventos plausibles. Ninguna regla se activa."
+      },
+      "signalless": {
+        "label": "Sin señales",
+        "desc": "Llega la respuesta correcta, pero sin ninguna señal de interacción — como un script que repite el flujo HTTP sin interfaz."
+      },
+      "impossible": {
+        "label": "Rotación imposible",
+        "desc": "Resuelto cerca del tiempo mínimo, informando menos pasos de rotación de los que el objetivo requiere físicamente."
+      }
+    },
+    "decision": "Decisión",
+    "score": "Puntuación",
+    "reasons": "Reglas activadas",
+    "noReasons": "Ninguna regla se activó — la interacción parece humana.",
+    "decisionAllow": "allow",
+    "decisionChallengeAgain": "challenge_again · 409",
+    "decisionDeny": "deny · 403",
+    "note": "Sin ML, sin huellas, sin coordenadas — el cliente informa tres contadores, el servidor los valida y cada decisión lleva sus razones. Las razones se quedan en el servidor: serían una chuleta para atacantes."
+  },
+  "code": {
+    "kicker": "Código",
+    "heading": "Conéctalo en unas pocas líneas",
+    "lead": "React en el frontend, cualquier servidor Node detrás. Los módulos de servidor no importan ni React ni Express.",
+    "nextNote": "Este es exactamente el patrón con el que funciona este sitio — Route Handlers más Upstash Redis.",
+    "viewSource": "Ver el código de este sitio"
+  },
+  "teaser": {
+    "kicker": "Hoja de ruta",
+    "heading": "El núcleo seguirá siendo MIT. Para siempre.",
+    "lead": "Todo lo que has probado en esta página es y seguirá siendo gratis. Exclusive es un nivel comercial planificado para equipos que ejecutan el guardián en producción.",
+    "promise": "Sin precios, sin pasarela de pago, sin capturas falsas — aún no existe, y no vamos a fingir lo contrario.",
+    "cta": "Ver lo que está planeado",
+    "availableBadge": "Disponible",
+    "plannedBadge": "Planificado",
+    "tiers": {
+      "free": {
+        "name": "Free (OSS)",
+        "blurb": "El paquete completo: ambos modos, tokens, puntuación de riesgo, temas, stores. Licencia MIT."
+      },
+      "pro": {
+        "name": "Pro",
+        "blurb": "API de verificación alojada, panel de analíticas, modos de desafío exclusivos, packs de reglas."
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "blurb": "SLA, licencia autoalojada de los modos exclusivos, SSO, registros de auditoría, reglas a medida."
+      }
+    }
+  },
+  "newsletter": {
+    "heading": "Recibe las notas de versión",
+    "lead": "Nuevos modos, nuevas reglas, cambios incompatibles — un correo breve cuando algo se publica. Nada más.",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "submit": "Suscribirme",
+    "consentLabel": "Acepto recibir correos con notas de versión. Baja en cualquier momento con un clic — guardamos tu dirección y nada más.",
+    "success": "Suscripción confirmada — estás en la lista.",
+    "successNote": "Acabas de superar un desafío real de SubmitGuard para llegar aquí.",
+    "protectedNote": "Este formulario está protegido por form-human-guard con la acción \"newsletter\" — intenta enviarlo. Un token de la demo de arriba sería rechazado aquí.",
+    "genericError": "Algo salió mal. Inténtalo de nuevo.",
+    "invalidEmail": "Eso no parece una dirección de correo válida.",
+    "consentRequired": "Por favor, marca la casilla de consentimiento.",
+    "rateLimited": "Demasiadas peticiones — espera un minuto e inténtalo de nuevo."
+  },
+  "footer": {
+    "disclaimer": "No es un sustituto del CAPTCHA: un bot diseñado a medida siempre puede superar un desafío visible para el cliente. Es un guardián ligero contra el abuso de formularios de bajo esfuerzo — conserva tu limitación de tasa y tu validación.",
+    "productHeading": "Producto",
+    "resourcesHeading": "Recursos",
+    "preferencesHeading": "Preferencias",
+    "demo": "Demo en vivo",
+    "docs": "Documentación",
+    "exclusive": "Exclusive (planificado)",
+    "license": "Licencia MIT",
+    "cookieSettings": "Ajustes de cookies",
+    "bottomLine": "construido con honestidad, protegido con honestidad."
+  },
+  "cookie": {
+    "ariaLabel": "Consentimiento de cookies",
+    "message": "Actualmente solo usamos cookies estrictamente necesarias: tu elección de consentimiento, idioma y preferencia de tema. Sin analíticas, sin píxeles de seguimiento.",
+    "accept": "Aceptar",
+    "necessaryOnly": "Solo necesarias"
+  },
+  "docs": {
+    "menu": "Menú de documentación",
+    "navLabel": "Documentación",
+    "englishOnly": "La documentación está por ahora solo en inglés. Las traducciones están planificadas.",
+    "onThisPage": "En esta página",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "pagination": "Paginación de docs"
+  },
+  "exclusive": {
+    "meta": {
+      "title": "Exclusive — nivel comercial planificado",
+      "description": "El núcleo seguirá siendo MIT, para siempre. Exclusive es un nivel comercial planificado: verificación alojada, analíticas, modos exclusivos. Únete a la lista de espera."
+    },
+    "plannedBadge": "Planificado — todavía no hay nada a la venta",
+    "heading": "El núcleo tiene licencia MIT, para siempre. Exclusive añade lo que los equipos necesitan en producción.",
+    "lead": "Open core, con honestidad: todo lo que el paquete hace hoy seguirá siendo gratis. Exclusive es la capa planificada encima — para equipos que prefieren no operar la infraestructura ellos mismos.",
+    "openCorePromise": "La promesa open-core: ninguna función existente pasará jamás detrás de un muro de pago. Si hoy está en el paquete MIT, ahí se queda.",
+    "plannedTierBadge": "Planificado — únete a la lista",
+    "availableTierBadge": "Disponible hoy",
+    "noPriceNote": "Aún sin precios — aquí no hay nada a la venta. Los miembros de la lista de espera tendrán precio early-bird cuando se lance.",
+    "freeNote": "Instálalo ya: npm install form-human-guard",
+    "honestyNote": "La misma honestidad se aplica aquí: una API de verificación alojada tampoco detiene mágicamente a los bots dirigidos. Exclusive trata de operar el guardián con comodidad a escala — paneles, información, soporte — no de una magia más fuerte.",
+    "tiers": {
+      "free": {
+        "name": "Free (OSS)",
+        "blurb": "Todo lo que el paquete hace hoy. Esta tarjeta existe para hacer tangible la promesa.",
+        "f1": "Ambos modos de guardián: DirectionGuard y SubmitGuard",
+        "f2": "Tokens HMAC de un solo uso, vinculación a acciones, tiempo medido en el servidor",
+        "f3": "Puntuación de riesgo determinista con reglas personalizadas",
+        "f4": "Los 6 temas del overlay + modelo completo de overrides",
+        "f5": "MemoryStore y RedisStore, adaptador de Express, utilidades de servidor agnósticas al framework"
+      },
+      "pro": {
+        "name": "Pro (planificado)",
+        "blurb": "Operaciones de producción sin operar la infraestructura.",
+        "f1": "API de verificación alojada — un endpoint listo para usar, sin Redis que mantener",
+        "f2": "Panel con analíticas de desafíos y verificaciones",
+        "f3": "Información sobre decisiones de riesgo: qué reglas se activan, dónde y con qué frecuencia",
+        "f4": "Modos de desafío exclusivos adicionales y packs de reglas configurables",
+        "f5": "Soporte prioritario"
+      },
+      "enterprise": {
+        "name": "Enterprise (planificado)",
+        "blurb": "Para equipos con requisitos de cumplimiento y escala.",
+        "f1": "Verificación alojada con SLA",
+        "f2": "Licencia autoalojada de los modos exclusivos",
+        "f3": "SSO para el panel",
+        "f4": "Registros de auditoría",
+        "f5": "Desarrollo de reglas a medida"
+      }
+    },
+    "waitlist": {
+      "heading": "Únete a la lista de espera",
+      "lead": "Ayúdanos a medir la demanda — y consigue precio early-bird cuando Exclusive se lance. Protegido por el propio guardián, naturalmente.",
+      "emailLabel": "Correo electrónico",
+      "tierLabel": "¿Qué nivel te interesa?",
+      "tiers": {
+        "pro": "Pro",
+        "enterprise": "Enterprise",
+        "curious": "Solo curiosidad"
+      },
+      "noteLabel": "¿Qué lo convertiría en una compra obligada?",
+      "noteOptional": "(opcional, 200 caracteres)",
+      "notePlaceholder": "p. ej., un panel que todo mi equipo pueda leer, o papeleo SOC 2…",
+      "submit": "Unirme a la lista",
+      "success": "¡Estás en la lista de espera!",
+      "successNote": "Te escribiremos cuando haya algo real que enseñar — y acabas de resolver un desafío real vinculado a la acción waitlist para llegar aquí.",
+      "backToDemo": "Volver a la demo",
+      "protectedNote": "Este formulario está protegido por form-human-guard con la acción \"waitlist\" — comiendo nuestra propia comida en la página que más importa.",
+      "genericError": "Algo salió mal. Inténtalo de nuevo.",
+      "invalidEmail": "Eso no parece una dirección de correo válida.",
+      "rateLimited": "Demasiadas peticiones — espera un minuto e inténtalo de nuevo."
+    },
+    "faq": {
+      "heading": "Preguntas frecuentes",
+      "free": {
+        "q": "¿El núcleo seguirá siendo gratis?",
+        "a": "Sí. El paquete tiene licencia MIT y así se queda, para siempre. Ninguna función existente pasará detrás de un muro de pago — Exclusive suma (infraestructura alojada, paneles, modos extra), no resta."
+      },
+      "price": {
+        "q": "¿Cuánto costará Pro?",
+        "a": "Sin decidir — no vamos a inventarnos una cifra para parecer establecidos. Los miembros de la lista de espera tendrán precio early-bird en el lanzamiento."
+      },
+      "when": {
+        "q": "¿Cuándo se lanza Exclusive?",
+        "a": "No prometemos fecha. La lista de espera existe precisamente para evaluar si construirlo y qué construir primero."
+      },
+      "selfhost": {
+        "q": "¿Puedo autoalojar las funciones de Exclusive?",
+        "a": "La licencia autoalojada de los modos exclusivos está planificada para el nivel Enterprise. El núcleo open source es autoalojado por definición."
+      },
+      "captcha": {
+        "q": "¿Es esto un servicio de CAPTCHA?",
+        "a": "No — y Exclusive no lo convertirá en uno. La dirección esperada es visible para el cliente, así que un bot dirigido siempre puede pasar; eso no cambia lo aloje quien lo aloje. Mira la sección de honestidad en la página principal."
+      }
+    }
+  }
+}

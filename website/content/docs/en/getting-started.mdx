@@ -1,0 +1,96 @@
+---
+title: Getting started
+description: Install form-human-guard and protect your first form in five minutes.
+---
+
+## Install
+
+```bash
+npm install form-human-guard
+```
+
+Peer dependencies: `react` / `react-dom` (≥ 18) for the components, `express` (≥ 4) for the server adapter. Both are optional — install only what you use. The server and store modules have **zero dependencies** and import neither React nor Express, so they run anywhere Node runs (including Next.js Route Handlers).
+
+## Five-minute setup (Express)
+
+Mount the guard routes and protect an endpoint:
+
+```ts
+import express from "express";
+import { createGuardRoutes, requireGuardToken } from "form-human-guard/express";
+import { MemoryStore } from "form-human-guard/stores";
+
+const app = express();
+app.use(express.json());
+
+const store = new MemoryStore(); // dev only — see /docs/stores
+const secret = process.env.GUARD_SECRET!; // long random string
+
+app.use("/guard", createGuardRoutes({ store, secret, action: "signup" }));
+
+app.post(
+  "/signup",
+  requireGuardToken({ store, secret, action: "signup" }),
+  (req, res) => {
+    // req.guardToken holds the decoded payload; the token is already consumed.
+    res.json({ ok: true });
+  }
+);
+
+app.listen(3000);
+```
+
+Then drop the invisible guard into your form:
+
+```tsx
+import { SubmitGuard } from "form-human-guard/react";
+
+export function SignupForm() {
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    await fetch("/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: form.get("email"),
+        guardToken: form.get("guardToken"), // filled in by SubmitGuard
+      }),
+    });
+  }
+
+  return (
+    <form onSubmit={onSubmit}>
+      <input name="email" type="email" required />
+      <SubmitGuard />
+      <button>Sign up</button>
+    </form>
+  );
+}
+```
+
+That's the whole loop: the first submit is intercepted, the user solves the rotate-to-match overlay, the token lands in the hidden `guardToken` input, and the submit continues automatically. The server verifies and consumes the token — a second use fails with `TOKEN_NOT_FOUND`.
+
+## Or: the always-visible widget
+
+```tsx
+import { useState } from "react";
+import { DirectionGuard } from "form-human-guard/react";
+import "form-human-guard/styles.css"; // optional styling
+
+export function LoginForm() {
+  const [guardToken, setGuardToken] = useState("");
+  return (
+    <form /* ... */>
+      <DirectionGuard onVerified={setGuardToken} />
+      <button disabled={!guardToken}>Login</button>
+    </form>
+  );
+}
+```
+
+## Before production
+
+- Replace `MemoryStore` with `RedisStore` if you run more than one instance — see [Stores](/docs/stores).
+- Set `GUARD_SECRET` to a long random string and keep it out of the repo.
+- Keep your rate limiting and validation: the guard complements them, it does not replace them — see [Security model](/docs/security).

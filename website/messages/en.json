@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "title": "form-human-guard — a lightweight pre-submit direction matching guard for forms",
+    "description": "A lightweight pre-submit direction matching guard for forms. Not a CAPTCHA replacement — an honest, zero-dependency interaction guard with one-time HMAC tokens, server-side timing, and explainable risk scoring."
+  },
+  "common": {
+    "copy": "Copy to clipboard",
+    "copied": "Copied"
+  },
+  "nav": {
+    "demo": "Demo",
+    "howItWorks": "How it works",
+    "exclusive": "Exclusive",
+    "docs": "Docs",
+    "skipToContent": "Skip to content",
+    "mainNav": "Main navigation",
+    "menu": "Menu"
+  },
+  "theme": {
+    "label": "Color theme",
+    "light": "Light theme",
+    "dark": "Dark theme",
+    "system": "Follow system theme"
+  },
+  "localeSwitcher": {
+    "label": "Language"
+  },
+  "hero": {
+    "badge": "v0.2 · MIT · zero runtime dependencies",
+    "tagline": "A lightweight pre-submit direction matching guard for forms.",
+    "sub": "Show an arrow, ask for the gesture, verify on the server, issue a one-time token. A small, honest layer that filters out low-effort bots — without CAPTCHAs, cookies, or fingerprinting.",
+    "ctaDemo": "Try it live",
+    "ctaDocs": "Read the docs"
+  },
+  "honesty": {
+    "heading": "What this is — and isn't",
+    "statement": "This package is not a full CAPTCHA replacement. The expected direction is visible to the client, so a targeted bot can always pass it. It is a lightweight pre-submit interaction guard designed to reduce low-effort automated form abuse. Use it together with rate limiting, server-side validation, and normal authentication security controls.",
+    "isTitle": "It is",
+    "is1": "A pre-submit human-interaction guard that filters out low-effort bots and accidental submits",
+    "is2": "A short-lived, one-time token flow with server-side timing checks",
+    "is3": "Deterministic, explainable risk scoring — no ML, no fingerprinting, no coordinates",
+    "isntTitle": "It is not",
+    "isnt1": "An authentication system",
+    "isnt2": "A CAPTCHA service",
+    "isnt3": "A replacement for rate limiting"
+  },
+  "demoDirection": {
+    "kicker": "Live demo",
+    "heading": "DirectionGuard — the visible widget",
+    "lead": "This is the real component talking to this site's real API. Perform the shown direction by dragging or with your arrow keys, and watch every request and response in the X-ray panel.",
+    "difficulty": "Difficulty",
+    "difficultyNote": "Difficulty is server-authoritative: the selector here is honoured only because this demo endpoint explicitly opts in — a client can never downgrade your production settings.",
+    "easy": "Easy",
+    "medium": "Medium",
+    "strict": "Strict",
+    "reset": "Reset demo",
+    "xrayTitle": "X-ray — live request / response",
+    "xrayEmpty": "Interact with the widget and the guard's network traffic will appear here.",
+    "verified": "Verified — one-time token issued",
+    "tokenNote": "This token is bound to the \"demo\" action and dies on first use. The newsletter form below would reject it with 403 ACTION_MISMATCH."
+  },
+  "demoSubmit": {
+    "kicker": "Live demo",
+    "heading": "SubmitGuard — invisible until submit",
+    "lead": "Nothing is rendered in the form but a hidden input. Press “Create account” and the submit is intercepted: rotate the arrow to match the target, and the form continues with a fresh one-time token.",
+    "themeLabel": "Overlay theme",
+    "followSite": "Follow site theme",
+    "accentLabel": "Accent override",
+    "clearAccent": "Clear override",
+    "shadowNote": "The overlay renders in a closed ShadowRoot: this page's CSS can't restyle it and scripts can't reach into it. Theming works through the preset + override tokens you're using right here.",
+    "formTitle": "Create account",
+    "fakeNote": "A fake form — nothing is stored. The guard and the token verification are real.",
+    "username": "Username",
+    "email": "Email",
+    "submit": "Create account",
+    "interceptNote": "This form is protected by form-human-guard — the button above will be intercepted.",
+    "consumedTitle": "Token verified and consumed —",
+    "failedTitle": "Verification failed —",
+    "tryReuse": "Try reusing the same token",
+    "reuseRejected": "Reuse rejected —",
+    "reuseExplain": "The token was deleted server-side on first use. Every replay fails with TOKEN_NOT_FOUND — that's the one-time guarantee."
+  },
+  "how": {
+    "kicker": "How it works",
+    "heading": "Five steps, one honest contract",
+    "lead": "The client only ever proves “a human-shaped interaction happened just now”. Everything that matters — timing, verdicts, tokens — lives on the server.",
+    "steps": {
+      "challenge": {
+        "title": "Challenge",
+        "desc": "The client fetches a randomized challenge; the server stores it with a 120 s TTL."
+      },
+      "interact": {
+        "title": "Interact",
+        "desc": "The user drags, taps, or uses arrow keys. Fully keyboard-operable."
+      },
+      "verify": {
+        "title": "Server verify",
+        "desc": "Direction, attempt limits, and elapsed time — all measured server-side."
+      },
+      "token": {
+        "title": "One-time token",
+        "desc": "An HMAC-signed token bound to your action, valid for 180 s, single use."
+      },
+      "consume": {
+        "title": "Consume",
+        "desc": "Your protected endpoint verifies and deletes the token. Replays fail."
+      }
+    },
+    "cards": {
+      "timing": {
+        "title": "Server-side timing",
+        "desc": "Solve time is computed from the server's own clock — the client-reported duration is telemetry only and can only ever raise suspicion, never lower it."
+      },
+      "binding": {
+        "title": "Action binding",
+        "desc": "Tokens are scoped to an action. A token earned on the demo can't be spent on the newsletter — the mismatch fails with 403 ACTION_MISMATCH."
+      },
+      "oneTime": {
+        "title": "One-time tokens",
+        "desc": "Verification deletes the token server-side. The same token presented twice fails with 401 — try it yourself in the demo above."
+      }
+    }
+  },
+  "risk": {
+    "kicker": "Risk scoring",
+    "heading": "Explainable rules, not a black box",
+    "lead": "Direction-match verifications pass through deterministic, rule-based scoring. These three scenarios run through the actual engine — same rules, same thresholds as production.",
+    "scenarios": {
+      "human": {
+        "label": "Human-like",
+        "desc": "A normal solve: ~3 seconds, a few rotation steps, plausible event counts. No rule fires."
+      },
+      "signalless": {
+        "label": "Signal-less",
+        "desc": "The correct answer arrives, but with no interaction signals at all — like a script replaying the HTTP flow without a UI."
+      },
+      "impossible": {
+        "label": "Impossible rotation",
+        "desc": "Solved near the minimum time, reporting fewer rotation steps than the target physically requires."
+      }
+    },
+    "decision": "Decision",
+    "score": "Score",
+    "reasons": "Fired rules",
+    "noReasons": "No rules fired — the interaction looks human.",
+    "decisionAllow": "allow",
+    "decisionChallengeAgain": "challenge_again · 409",
+    "decisionDeny": "deny · 403",
+    "note": "No ML, no fingerprinting, no coordinates — the client reports three counters, the server validates them, and every decision carries its reasons. Reasons stay on the server: they'd be a cheat sheet for attackers."
+  },
+  "code": {
+    "kicker": "Code",
+    "heading": "Wire it up in a few lines",
+    "lead": "React on the front, any Node server on the back. The server modules import neither React nor Express.",
+    "nextNote": "This is the exact pattern this site runs on — Route Handlers plus Upstash Redis.",
+    "viewSource": "View this site's source"
+  },
+  "teaser": {
+    "kicker": "Roadmap",
+    "heading": "The core stays MIT. Forever.",
+    "lead": "Everything you've tried on this page is and stays free. Exclusive is a planned commercial tier for teams running the guard in production.",
+    "promise": "No prices, no checkout, no fake screenshots — it doesn't exist yet, and we won't pretend otherwise.",
+    "cta": "See what's planned",
+    "availableBadge": "Available",
+    "plannedBadge": "Planned",
+    "tiers": {
+      "free": {
+        "name": "Free (OSS)",
+        "blurb": "The full package: both guard modes, tokens, risk scoring, themes, stores. MIT-licensed."
+      },
+      "pro": {
+        "name": "Pro",
+        "blurb": "Hosted verification API, analytics dashboard, exclusive challenge modes, rule packs."
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "blurb": "SLA, self-hosted licensing of exclusive modes, SSO, audit logs, custom rules."
+      }
+    }
+  },
+  "newsletter": {
+    "heading": "Get release notes",
+    "lead": "New modes, new rules, breaking changes — a short email when something ships. Nothing else.",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "you@example.com",
+    "submit": "Subscribe",
+    "consentLabel": "I agree to receive release-note emails. Unsubscribe anytime with one click — we store your address and nothing else.",
+    "success": "Subscribed — you're on the list.",
+    "successNote": "You just passed a real SubmitGuard challenge to get here.",
+    "protectedNote": "This form is protected by form-human-guard with action \"newsletter\" — try submitting it. A token from the demo above would be rejected here.",
+    "genericError": "Something went wrong. Please try again.",
+    "invalidEmail": "That doesn't look like a valid email address.",
+    "consentRequired": "Please confirm the consent checkbox.",
+    "rateLimited": "Too many requests — please wait a minute and try again."
+  },
+  "footer": {
+    "disclaimer": "Not a CAPTCHA replacement: a targeted bot can always pass a client-visible challenge. This is a lightweight guard against low-effort form abuse — keep your rate limiting and validation.",
+    "productHeading": "Product",
+    "resourcesHeading": "Resources",
+    "preferencesHeading": "Preferences",
+    "demo": "Live demo",
+    "docs": "Documentation",
+    "exclusive": "Exclusive (planned)",
+    "license": "MIT license",
+    "cookieSettings": "Cookie settings",
+    "bottomLine": "built honestly, guarded honestly."
+  },
+  "cookie": {
+    "ariaLabel": "Cookie consent",
+    "message": "We currently use only strictly necessary cookies: your consent choice, language, and theme preferences. No analytics, no tracking pixels.",
+    "accept": "Accept",
+    "necessaryOnly": "Necessary only"
+  },
+  "docs": {
+    "menu": "Documentation menu",
+    "navLabel": "Documentation",
+    "englishOnly": "Documentation is currently English-only. Translations are planned.",
+    "onThisPage": "On this page",
+    "prev": "Previous",
+    "next": "Next",
+    "pagination": "Docs pagination"
+  },
+  "exclusive": {
+    "meta": {
+      "title": "Exclusive — planned commercial tier",
+      "description": "The core stays MIT, forever. Exclusive is a planned commercial tier: hosted verification, analytics, exclusive challenge modes. Join the waitlist."
+    },
+    "plannedBadge": "Planned — nothing for sale yet",
+    "heading": "The core is MIT-licensed, forever. Exclusive adds what teams need in production.",
+    "lead": "Open core, honestly: everything the package does today stays free. Exclusive is the planned layer on top — for teams who'd rather not run the infrastructure themselves.",
+    "openCorePromise": "The open-core promise: no existing feature will ever move behind a paywall. If it's in the MIT package today, it stays there.",
+    "plannedTierBadge": "Planned — join the waitlist",
+    "availableTierBadge": "Available today",
+    "noPriceNote": "No pricing yet — nothing here is for sale. Waitlist members get early-bird pricing when it ships.",
+    "freeNote": "Install it now: npm install form-human-guard",
+    "honestyNote": "The same honesty applies here: a hosted verification API does not magically stop targeted bots either. Exclusive is about operating the guard comfortably at scale — dashboards, insight, support — not about stronger magic.",
+    "tiers": {
+      "free": {
+        "name": "Free (OSS)",
+        "blurb": "Everything the package does today. This card exists to make the promise concrete.",
+        "f1": "Both guard modes: DirectionGuard and SubmitGuard",
+        "f2": "One-time HMAC tokens, action binding, server-side timing",
+        "f3": "Deterministic risk scoring with custom rules",
+        "f4": "All 6 overlay themes + full override model",
+        "f5": "MemoryStore and RedisStore, Express adapter, framework-agnostic server utils"
+      },
+      "pro": {
+        "name": "Pro (planned)",
+        "blurb": "Production operations without running the infrastructure.",
+        "f1": "Hosted verification API — a drop-in endpoint, no Redis to run",
+        "f2": "Dashboard with challenge & verification analytics",
+        "f3": "Risk-decision insights: which rules fire, where, how often",
+        "f4": "Additional exclusive challenge modes and configurable rule packs",
+        "f5": "Priority support"
+      },
+      "enterprise": {
+        "name": "Enterprise (planned)",
+        "blurb": "For teams with compliance and scale requirements.",
+        "f1": "SLA-backed hosted verification",
+        "f2": "Self-hosted licensing of exclusive modes",
+        "f3": "SSO for the dashboard",
+        "f4": "Audit logs",
+        "f5": "Custom rule development"
+      }
+    },
+    "waitlist": {
+      "heading": "Join the waitlist",
+      "lead": "Help us gauge demand — and get early-bird pricing when Exclusive ships. Protected by the guard itself, naturally.",
+      "emailLabel": "Email address",
+      "tierLabel": "Which tier interests you?",
+      "tiers": {
+        "pro": "Pro",
+        "enterprise": "Enterprise",
+        "curious": "Just curious"
+      },
+      "noteLabel": "What would make this a must-buy?",
+      "noteOptional": "(optional, 200 characters)",
+      "notePlaceholder": "e.g. a dashboard my whole team can read, or SOC 2 paperwork…",
+      "submit": "Join the waitlist",
+      "success": "You're on the waitlist!",
+      "successNote": "We'll email you when there's something real to show — and you just solved a real waitlist-bound challenge to get here.",
+      "backToDemo": "Back to the demo",
+      "protectedNote": "This form is protected by form-human-guard with action \"waitlist\" — dogfooding on the page that matters most.",
+      "genericError": "Something went wrong. Please try again.",
+      "invalidEmail": "That doesn't look like a valid email address.",
+      "rateLimited": "Too many requests — please wait a minute and try again."
+    },
+    "faq": {
+      "heading": "Frequently asked questions",
+      "free": {
+        "q": "Will the core stay free?",
+        "a": "Yes. The package is MIT-licensed and stays that way, forever. No existing feature will ever move behind a paywall — Exclusive is additive (hosted infrastructure, dashboards, extra modes), not subtractive."
+      },
+      "price": {
+        "q": "What will Pro cost?",
+        "a": "Undecided — we won't invent a number to look established. Waitlist members get early-bird pricing when it ships."
+      },
+      "when": {
+        "q": "When does Exclusive launch?",
+        "a": "No date promised. The waitlist exists precisely to gauge whether and what to build first."
+      },
+      "selfhost": {
+        "q": "Can I self-host the Exclusive features?",
+        "a": "Self-hosted licensing of the exclusive challenge modes is planned for the Enterprise tier. The open-source core is self-hosted by definition."
+      },
+      "captcha": {
+        "q": "Is this a CAPTCHA service?",
+        "a": "No — and Exclusive won't turn it into one. The expected direction is visible to the client, so a targeted bot can always pass; that stays true no matter who hosts the verification. See the honesty section on the landing page."
+      }
+    }
+  }
+}

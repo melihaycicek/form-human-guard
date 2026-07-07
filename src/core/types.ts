@@ -12,7 +12,13 @@ export type Direction =
 export type Difficulty = "easy" | "medium" | "strict";
 
 /** Challenge modes supported by this version. */
-export type GuardMode = "direction";
+export type GuardMode = "direction" | "direction-match";
+
+export const GUARD_MODES: readonly GuardMode[] = ["direction", "direction-match"];
+
+export function isGuardMode(value: unknown): value is GuardMode {
+  return typeof value === "string" && (GUARD_MODES as readonly string[]).includes(value);
+}
 
 export type InputType = "mouse" | "touch" | "keyboard";
 
@@ -28,6 +34,8 @@ export interface StoredChallenge {
   attemptCount: number;
   difficulty: Difficulty;
   mode: GuardMode;
+  /** direction-match only: the randomized starting direction (never the target). */
+  initialDirection?: Direction;
 }
 
 export interface GuardTokenPayload {

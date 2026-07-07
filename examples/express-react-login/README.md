@@ -39,3 +39,15 @@ export default {
 ```
 
 Drag the arrow direction (or use the arrow keys) to unlock the Login button, then submit. Each submit consumes the token, so the guard must be solved again for the next attempt.
+
+## Submit-time variant (v0.2)
+
+The same server also powers the invisible submit-time guard — no server changes needed. In `App.tsx`, replace the `<DirectionGuard …>` line (and the `guardToken` state) with:
+
+```tsx
+import { SubmitGuard } from "form-human-guard/react";
+
+<SubmitGuard theme="midnight" />
+```
+
+and read the token from the form data instead: `form.get("guardToken")`. On submit, a rotate-to-match challenge opens in a closed-ShadowRoot overlay; the login request continues automatically once it is solved.

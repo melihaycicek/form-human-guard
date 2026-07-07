@@ -7,6 +7,7 @@ export type {
   StoredToken,
   GuardTokenPayload,
 } from "./types";
+export { GUARD_MODES, isGuardMode } from "./types";
 export type { GuardErrorCode } from "./errors";
 export { errorMessages } from "./errors";
 export {
@@ -15,5 +16,10 @@ export {
   MAX_FAILED_ATTEMPTS,
   CHALLENGE_EVICTION_GRACE_MS,
 } from "./constants";
-export type { DifficultyConfig } from "./difficulty";
-export { difficultyConfig, DIFFICULTIES, isDifficulty } from "./difficulty";
+export type { DifficultyConfig, DirectionMatchDifficultyConfig } from "./difficulty";
+export {
+  difficultyConfig,
+  directionMatchDifficultyConfig,
+  DIFFICULTIES,
+  isDifficulty,
+} from "./difficulty";
